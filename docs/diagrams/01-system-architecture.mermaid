@@ -1,0 +1,51 @@
+graph TB
+    subgraph user["ผู้ใช้"]
+        U["LINE App<br/>(แชต + Rich Menu)"]
+    end
+
+    subgraph line["LINE Platform"]
+        MAPI["Messaging API<br/>webhook / reply"]
+    end
+
+    subgraph gas["Google Apps Script (backend เดียว)"]
+        POST["doPost()<br/>Webhook handler"]
+        GET["doGet()<br/>LIFF web app + Data API"]
+        LIFF["LIFF page<br/>HTML + Chart.js"]
+    end
+
+    subgraph ai["AI"]
+        GEM["Gemini Flash-Lite<br/>parse + จัดหมวด"]
+    end
+
+    subgraph data["Google Sheet (data store)"]
+        E[("Entries")]
+        C[("Categories")]
+        US[("Users")]
+    end
+
+    U -->|"พิมข้อความ / กดเมนู"| MAPI
+    MAPI -->|"webhook event"| POST
+    POST -->|"reply message / Receipt"| MAPI
+    MAPI -->|"แสดงผล"| U
+
+    POST -->|"prompt + Categories"| GEM
+    GEM -->|"type, amount, category, hashtags"| POST
+
+    POST -->|"เช็ค whitelist"| US
+    POST -->|"อ่านชุดหมวด"| C
+    POST -->|"เขียน / แก้ / ลบ"| E
+
+    U -->|"เปิด LIFF จาก Rich Menu"| LIFF
+    LIFF -->|"ขอข้อมูล + userId"| GET
+    GET -->|"อ่าน Entry ของ user"| E
+    GET -->|"JSON สรุปต่อเดือน/หมวด/tag"| LIFF
+    LIFF -->|"donut chart"| U
+
+    style POST fill:#4ecdc4
+    style GET fill:#4ecdc4
+    style LIFF fill:#95e1d3
+    style GEM fill:#ff6b6b
+    style MAPI fill:#ffd93d
+    style E fill:#a8dadc
+    style C fill:#a8dadc
+    style US fill:#a8dadc

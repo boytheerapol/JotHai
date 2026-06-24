@@ -1,0 +1,25 @@
+sequenceDiagram
+    actor U as ผู้ใช้
+    participant R as Rich Menu
+    participant LF as LIFF (Chart.js)
+    participant GD as GAS doGet
+    participant S as Google Sheet
+
+    U->>R: กดปุ่ม "ภาพรวม"
+    R->>LF: เปิด LIFF page ใน LINE
+    LF->>LF: liff.init() + ดึง userId
+    LF->>GD: GET ?userId&month=current
+    GD->>S: อ่าน Entries ของ user (เดือนนั้น)
+    S-->>GD: rows
+    GD->>GD: รวมยอด ต่อ type / category / hashtag
+    GD-->>LF: JSON สรุป
+    LF-->>U: donut chart 3 tab<br/>(รายรับ-จ่าย / รายรับ by cat / รายจ่าย by cat)
+
+    opt เปลี่ยนเดือน หรือ กรอง hashtag
+        U->>LF: เลือกเดือน / แตะ tag
+        LF->>GD: GET ?userId&month=...&tag=...
+        GD->>S: อ่านตามเงื่อนไข
+        S-->>GD: rows
+        GD-->>LF: JSON สรุปใหม่
+        LF-->>U: re-render chart
+    end

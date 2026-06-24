@@ -1,0 +1,33 @@
+sequenceDiagram
+    actor U as ผู้ใช้
+    participant L as LINE Platform
+    participant W as GAS doPost
+    participant S as Google Sheet
+    participant G as Gemini Flash-Lite
+
+    U->>L: พิม "กาแฟ 50 #cafe"
+    L->>W: webhook event (userId, text)
+
+    W->>S: เช็ค status ใน Users
+    alt ยังไม่ approved
+        S-->>W: pending / ไม่พบ
+        W->>S: log เป็น pending
+        W-->>L: reply "ยังไม่ได้รับอนุญาต"
+        L-->>U: แจ้งเตือน
+    else approved
+        S-->>W: approved
+        W->>S: อ่านชุด Categories
+        W->>G: parse(text, categories)
+        G-->>W: type, amount, category, hashtags
+
+        alt ไม่พบจำนวนเงิน
+            W-->>L: reply ถามกลับ "จำนวนเท่าไหร่?"
+            L-->>U: ถามจำนวน
+            Note over W,U: รอ Clarification (state ผูก userId)
+        else มีจำนวนครบ
+            W->>S: เขียน Entry (Optimistic save)
+            S-->>W: entry_id
+            W-->>L: reply Receipt (แก้หมวด/สลับ Type/ลบ)
+            L-->>U: แสดง Receipt card
+        end
+    end
