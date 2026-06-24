@@ -1,5 +1,9 @@
 # Implementation Plan — JotHai (จดให้)
 
+> **เอกสารนี้คือ high-level roadmap** (เจตนาแต่ละ phase + build-order rationale) — ไม่มี code ระดับลงมือ
+> สำหรับ **executable plan ที่ละเอียดระดับ code** (exact signatures, code snippets, test ที่รันได้, per-task verification) ดู:
+> 👉 [`docs/superpowers/plans/2026-06-24-jothai-implementation.md`](superpowers/plans/2026-06-24-jothai-implementation.md)
+>
 > LINE expense tracker · Google Apps Script backend · Gemini Flash-Lite · Google Sheet store · LIFF dashboard
 > อ้างอิง: `CONTEXT.md`, `docs/adr/*`, `docs/design-notes.md`, `docs/diagrams/*`
 
