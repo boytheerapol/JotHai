@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         body {
@@ -46,7 +47,6 @@
             margin-top: 0;
         }
 
-        /* ระบบ Tabs */
         .tabs {
             display: flex;
             margin-bottom: 20px;
@@ -71,7 +71,6 @@
             color: #fff;
         }
 
-        /* ตัวกรอง (Filters) */
         .filter-group {
             display: flex;
             gap: 10px;
@@ -98,7 +97,6 @@
             font-weight: 500;
         }
 
-        /* Dashboard Styles */
         .summary-box {
             display: flex;
             justify-content: space-between;
@@ -134,7 +132,6 @@
             margin-bottom: 20px;
         }
 
-        /* Entry List Styles (แท็บรายการ) */
         .entry-card {
             background: #fff;
             padding: 15px;
@@ -195,21 +192,37 @@
             padding: 10px;
         }
 
-        /* ฟอร์มแก้ไข */
         .edit-form {
             display: none;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             background: #f9f9f9;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
+            margin-top: 10px;
         }
 
-        .edit-form input {
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-family: "Kanit";
+            font-size: 14px;
+            background: #fff;
         }
 
         #loading {
@@ -217,6 +230,10 @@
             color: #888;
             margin: 30px 0;
             font-size: 16px;
+        }
+
+        div:where(.swal2-container) {
+            font-family: "Kanit", sans-serif;
         }
     </style>
 </head>
@@ -275,8 +292,11 @@
     <script>
         const LIFF_ID = "2010529543-LkVEFzhx";
 
-        // ⚠️ นำ Web App URL ของ Google Apps Script มาใส่ตรงนี้ครับ ⚠️
+        // ⚠️ นำ Web App URL ของ Google Apps Script มาใส่ตรงนี้ ⚠️
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyfh7wTfcOue6G7xStHmBTzTFrVlyeNepjj193x089dWE3GII7lWquV101SRoQITqDw/exec";
+
+        // เปลี่ยนจาก const ถาวร เป็น let ว่างๆ เพื่อรอรับค่าจาก Google Sheets
+        let dynamicCategories = [];
 
         let userId = "";
         let idToken = "";
@@ -288,28 +308,23 @@
         async function main() {
             await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
             if (liff.isLoggedIn()) {
-                const profile = await liff.getProfile();
-                userId = profile.userId;
-                idToken = liff.getIDToken(); // ดึงกุญแจสำคัญสำหรับแก้ไข/ลบ
+                userId = (await liff.getProfile()).userId;
+                idToken = liff.getIDToken();
                 loadData();
             } else {
                 liff.login();
             }
         }
 
-        // --- ระบบสลับแท็บ ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             event.currentTarget.classList.add('active');
             document.getElementById('dashboard-tab').style.display = 'none';
             document.getElementById('entries-tab').style.display = 'none';
             document.getElementById(`${tabId}-tab`).style.display = 'block';
-
-            // ซ่อนช่องค้นหา Hashtag ถ้าย้ายมารายการ (เพราะเราเน้นลิสต์ทั้งหมดของเดือน)
             document.getElementById('hashtag-container').style.display = (tabId === 'dashboard') ? 'flex' : 'none';
         }
 
-        // --- โหลดข้อมูล (ดึงทั้ง 2 หน้าต่าง) ---
         async function loadData() {
             const month = document.getElementById('month-picker').value;
             const hashtag = document.getElementById('hashtag-filter').value.trim();
@@ -319,7 +334,6 @@
             document.getElementById('entries-tab').style.display = 'none';
 
             try {
-                // ยิง Fetch 2 เส้นพร้อมกัน (Overview และ List) เพื่อความรวดเร็ว
                 const overviewUrl = `${GAS_URL}?api=overview&userId=${userId}&month=${month}${hashtag ? '&hashtag=' + encodeURIComponent(hashtag) : ''}`;
                 const listUrl = `${GAS_URL}?api=list&userId=${userId}&month=${month}`;
 
@@ -327,21 +341,26 @@
                 const dataOverview = await resOverview.json();
                 const dataList = await resList.json();
 
-                if (dataOverview.status === 'success') renderDashboard(dataOverview.data);
-                if (dataList.status === 'success') renderEntriesList(dataList.data);
+                if (dataOverview.status === 'success') {
+                    renderDashboard(dataOverview.data);
+                }
 
-                // แสดงแท็บที่เลือกอยู่
+                if (dataList.status === 'success') {
+                    // นำหมวดหมู่ที่ส่งมาจากหลังบ้าน มาเก็บไว้ในตัวแปร
+                    dynamicCategories = dataList.categories || [];
+                    renderEntriesList(dataList.data);
+                }
+
                 const activeTab = document.querySelector('.tab-btn.active').innerText.includes('รายการ') ? 'entries' : 'dashboard';
                 document.getElementById(`${activeTab}-tab`).style.display = 'block';
             } catch (error) {
                 console.error(error);
-                alert('เกิดข้อผิดพลาดในการดึงข้อมูล');
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดึงข้อมูลได้' });
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        // --- เรนเดอร์แท็บ: รายการ ---
         function renderEntriesList(entries) {
             const listEl = document.getElementById('entries-list');
             listEl.innerHTML = '';
@@ -355,6 +374,14 @@
                 const isExpense = (entry.type === 'รายจ่าย' || entry.type === 'expense');
                 const colorClass = isExpense ? 'expense' : 'income';
                 const dateStr = new Date(entry.timestamp).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+
+                // ใช้ตัวแปร dynamicCategories ในการสร้างตัวเลือก (Dropdown)
+                let catOptions = dynamicCategories.map(c => `<option value="${c}" ${c === entry.category ? 'selected' : ''}>${c}</option>`).join('');
+
+                // ถ้าหมวดหมู่เก่าของรายการนั้น ไม่มีอยู่ในลิสต์ปัจจุบัน (เช่น เคยมีหมวดนี้แล้วลบทิ้ง) ให้แถมเข้าไปด้วย จะได้ไม่เด้งเพี้ยน
+                if (!dynamicCategories.includes(entry.category)) {
+                    catOptions += `<option value="${entry.category}" selected>${entry.category}</option>`;
+                }
 
                 const html = `
           <div class="entry-card ${colorClass}" id="card-${entry.row_index}">
@@ -371,10 +398,21 @@
             </div>
             
             <div class="edit-form" id="edit-${entry.row_index}">
-              <input type="number" id="inp-amt-${entry.row_index}" value="${entry.amount}" placeholder="จำนวนเงิน">
-              <input type="text" id="inp-desc-${entry.row_index}" value="${entry.description}" placeholder="รายละเอียด">
-              <input type="text" id="inp-cat-${entry.row_index}" value="${entry.category}" placeholder="หมวดหมู่">
-              <div class="entry-actions" style="margin-top: 5px;">
+              <div class="form-group">
+                <label>จำนวนเงิน (บาท)</label>
+                <input type="number" id="inp-amt-${entry.row_index}" value="${entry.amount}">
+              </div>
+              <div class="form-group">
+                <label>รายละเอียด</label>
+                <input type="text" id="inp-desc-${entry.row_index}" value="${entry.description}">
+              </div>
+              <div class="form-group">
+                <label>หมวดหมู่</label>
+                <select id="inp-cat-${entry.row_index}">
+                  ${catOptions}
+                </select>
+              </div>
+              <div class="entry-actions" style="margin-top: 10px;">
                 <button class="btn-small" style="background:#999;" onclick="toggleEdit(${entry.row_index})">ยกเลิก</button>
                 <button class="btn-small btn-edit" onclick="saveEdit(${entry.row_index})">บันทึก</button>
               </div>
@@ -400,12 +438,23 @@
             }
         }
 
-        // --- ระบบยิง POST (แก้ไข / ลบ / เลิกทำ) ---
         async function mutateEntry(rowIndex, action, payload = {}) {
-            if (action === 'delete' && !confirm('แน่ใจหรือไม่ที่จะลบรายการนี้?')) return;
+            if (action === 'delete') {
+                const result = await Swal.fire({
+                    title: 'ยืนยันการลบ?',
+                    text: "คุณสามารถกดเลิกทำ (Undo) ได้ภายหลัง",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f44336',
+                    cancelButtonColor: '#999',
+                    confirmButtonText: 'ใช่, ลบรายการ',
+                    cancelButtonText: 'ยกเลิก',
+                    reverseButtons: true
+                });
+                if (!result.isConfirmed) return;
+            }
 
             try {
-                // ใช้เทคนิค text/plain เพื่อหลบ CORS กฎเหล็กของ GAS
                 const postData = { idToken: idToken, action: action, payload: { row_index: rowIndex, ...payload } };
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
@@ -416,7 +465,6 @@
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    // อัปเดต UI ทันทีโดยไม่ต้องโหลดหน้าเว็บใหม่
                     if (action === 'delete') {
                         document.getElementById(`view-${rowIndex}`).style.display = 'none';
                         document.getElementById(`edit-${rowIndex}`).style.display = 'none';
@@ -429,14 +477,15 @@
                         document.getElementById(`lbl-desc-${rowIndex}`).innerText = payload.description;
                         document.getElementById(`lbl-cat-${rowIndex}`).innerText = payload.category;
                         toggleEdit(rowIndex);
+
+                        Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
                     }
-                    // โหลดกราฟหน้าแดชบอร์ดใหม่แบบเงียบๆ (ซิงก์ข้อมูลให้ตรงกัน)
                     silentRefreshOverview();
                 } else {
-                    alert('ผิดพลาด: ' + result.message);
+                    Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: result.message });
                 }
             } catch (err) {
-                alert('การเชื่อมต่อล้มเหลว กรุณาลองใหม่');
+                Swal.fire({ icon: 'error', title: 'ขาดการเชื่อมต่อ', text: 'กรุณาลองใหม่อีกครั้ง' });
             }
         }
 
@@ -447,7 +496,6 @@
             mutateEntry(rowIdx, 'edit', { amount: parseFloat(amt), description: desc, category: cat });
         }
 
-        // โหลดแดชบอร์ดซ้ำเงียบๆ หลังมีการอัปเดตข้อมูล
         async function silentRefreshOverview() {
             const month = document.getElementById('month-picker').value;
             const overviewUrl = `${GAS_URL}?api=overview&userId=${userId}&month=${month}`;
@@ -456,7 +504,6 @@
             if (data.status === 'success') renderDashboard(data.data);
         }
 
-        // --- เรนเดอร์แท็บ: แดชบอร์ด (กราฟเดิม) ---
         function renderDashboard(data) {
             document.getElementById('total-income').innerText = '฿' + data.incomeTotal.toLocaleString('th-TH');
             document.getElementById('total-expense').innerText = '฿' + data.expenseTotal.toLocaleString('th-TH');
