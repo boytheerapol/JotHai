@@ -303,3 +303,19 @@ Before writing any Gemini call, confirm the current Flash-Lite model string in G
 - **DO NOT add npm packages, build steps, or external runtimes.** The entire stack is GAS + HTML.
 - **DO NOT write data before access control passes.** `checkUser` must run at the top of every `doPost` handler.
 - **DO NOT use UTC date methods** (`toISOString()`, `toUTCString()`) for any display or filtering logic. Always use `Utilities.formatDate(..., 'Asia/Bangkok', ...)`.
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (github.com/boytheerapol/JotHai). External PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the default canonical label vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
