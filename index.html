@@ -27,7 +27,7 @@
         h1 {
             text-align: center;
             color: #1DB446;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 24px;
         }
 
@@ -46,7 +46,32 @@
             margin-top: 0;
         }
 
-        /* กล่องค้นหา */
+        /* ระบบ Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #888;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #1DB446;
+            color: #fff;
+        }
+
+        /* ตัวกรอง (Filters) */
         .filter-group {
             display: flex;
             gap: 10px;
@@ -58,7 +83,7 @@
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            font-family: "Kanit", sans-serif;
+            font-family: "Kanit";
             font-size: 14px;
         }
 
@@ -69,11 +94,11 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-family: "Kanit", sans-serif;
+            font-family: "Kanit";
             font-weight: 500;
         }
 
-        /* สรุปตัวเลข */
+        /* Dashboard Styles */
         .summary-box {
             display: flex;
             justify-content: space-between;
@@ -102,11 +127,89 @@
             margin-top: 5px;
         }
 
-        /* กราฟ */
         .chart-container {
             position: relative;
             height: 220px;
             width: 100%;
+            margin-bottom: 20px;
+        }
+
+        /* Entry List Styles (แท็บรายการ) */
+        .entry-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #ccc;
+        }
+
+        .entry-card.expense {
+            border-left-color: #f44336;
+        }
+
+        .entry-card.income {
+            border-left-color: #1DB446;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .entry-desc {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .entry-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .btn-small {
+            padding: 5px 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-family: "Kanit";
+            font-size: 12px;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #f0ad4e;
+        }
+
+        .btn-delete {
+            background: #f44336;
+        }
+
+        .btn-undo {
+            background: #607d8b;
+            width: 100%;
+            padding: 10px;
+        }
+
+        /* ฟอร์มแก้ไข */
+        .edit-form {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .edit-form input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: "Kanit";
         }
 
         #loading {
@@ -115,13 +218,6 @@
             margin: 30px 0;
             font-size: 16px;
         }
-
-        #error-msg {
-            text-align: center;
-            color: #f44336;
-            margin: 20px 0;
-            display: none;
-        }
     </style>
 </head>
 
@@ -129,21 +225,24 @@
     <div class="container">
         <h1>📊 สรุปการเงินของคุณ</h1>
 
+        <div class="tabs">
+            <div class="tab-btn active" onclick="switchTab('dashboard')">📈 แดชบอร์ด</div>
+            <div class="tab-btn" onclick="switchTab('entries')">📝 รายการ</div>
+        </div>
+
         <div class="card">
             <div class="filter-group">
                 <input type="month" id="month-picker">
                 <button class="btn" onclick="loadData()">ค้นหา</button>
             </div>
-            <div class="filter-group">
-                <input type="text" id="hashtag-filter" placeholder="กรองด้วยแฮชแท็ก เช่น ขนม, อาหาร">
+            <div class="filter-group" id="hashtag-container">
+                <input type="text" id="hashtag-filter" placeholder="เช่น อาหาร, ขนม">
             </div>
         </div>
 
         <div id="loading">⏳ กำลังประมวลผลข้อมูล...</div>
-        <div id="error-msg"></div>
 
-        <div id="dashboard" style="display: none;">
-
+        <div id="dashboard-tab" style="display: none;">
             <div class="summary-box">
                 <div class="summary-item">
                     <div style="font-size: 14px; color: #666;">รายรับรวม</div>
@@ -154,21 +253,22 @@
                     <div class="expense-text" id="total-expense">฿0</div>
                 </div>
             </div>
-
             <div class="card">
                 <h2>สัดส่วน รายรับ-รายจ่าย</h2>
                 <div class="chart-container"><canvas id="overviewChart"></canvas></div>
             </div>
-
             <div class="card">
                 <h2>วิเคราะห์รายจ่าย</h2>
                 <div class="chart-container"><canvas id="expenseChart"></canvas></div>
             </div>
-
             <div class="card">
                 <h2>วิเคราะห์รายรับ</h2>
                 <div class="chart-container"><canvas id="incomeChart"></canvas></div>
             </div>
+        </div>
+
+        <div id="entries-tab" style="display: none;">
+            <div id="entries-list"></div>
         </div>
     </div>
 
@@ -179,124 +279,198 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyfh7wTfcOue6G7xStHmBTzTFrVlyeNepjj193x089dWE3GII7lWquV101SRoQITqDw/exec";
 
         let userId = "";
-        let charts = {}; // เก็บตัวแปรกราฟไว้เพื่อทำลายก่อนวาดใหม่ (ป้องกันบั๊กกราฟซ้อนกัน)
+        let idToken = "";
+        let charts = {};
 
-        // ตั้งค่า Default ตัวเลือกเดือน ให้เป็นเดือนปัจจุบัน
         const now = new Date();
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('month-picker').value = currentMonth;
+        document.getElementById('month-picker').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-        // เริ่มต้นทำงาน
         async function main() {
             await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
             if (liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
-                userId = profile.userId; // ดึง User ID ไว้ใช้กรองข้อมูล
-                loadData(); // สั่งดึงข้อมูลทันที
+                userId = profile.userId;
+                idToken = liff.getIDToken(); // ดึงกุญแจสำคัญสำหรับแก้ไข/ลบ
+                loadData();
             } else {
                 liff.login();
             }
         }
 
-        // ฟังก์ชันดึงข้อมูลจาก GAS
+        // --- ระบบสลับแท็บ ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('dashboard-tab').style.display = 'none';
+            document.getElementById('entries-tab').style.display = 'none';
+            document.getElementById(`${tabId}-tab`).style.display = 'block';
+
+            // ซ่อนช่องค้นหา Hashtag ถ้าย้ายมารายการ (เพราะเราเน้นลิสต์ทั้งหมดของเดือน)
+            document.getElementById('hashtag-container').style.display = (tabId === 'dashboard') ? 'flex' : 'none';
+        }
+
+        // --- โหลดข้อมูล (ดึงทั้ง 2 หน้าต่าง) ---
         async function loadData() {
             const month = document.getElementById('month-picker').value;
             const hashtag = document.getElementById('hashtag-filter').value.trim();
 
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('error-msg').style.display = 'none';
+            document.getElementById('dashboard-tab').style.display = 'none';
+            document.getElementById('entries-tab').style.display = 'none';
 
             try {
-                // สร้าง URL พร้อมพารามิเตอร์ส่งไปถาม GAS
-                let url = `${GAS_URL}?api=overview&userId=${userId}&month=${month}`;
-                if (hashtag) url += `&hashtag=${encodeURIComponent(hashtag)}`;
+                // ยิง Fetch 2 เส้นพร้อมกัน (Overview และ List) เพื่อความรวดเร็ว
+                const overviewUrl = `${GAS_URL}?api=overview&userId=${userId}&month=${month}${hashtag ? '&hashtag=' + encodeURIComponent(hashtag) : ''}`;
+                const listUrl = `${GAS_URL}?api=list&userId=${userId}&month=${month}`;
 
-                const response = await fetch(url);
-                const result = await response.json();
+                const [resOverview, resList] = await Promise.all([fetch(overviewUrl), fetch(listUrl)]);
+                const dataOverview = await resOverview.json();
+                const dataList = await resList.json();
 
-                if (result.status === 'success') {
-                    renderDashboard(result.data);
-                } else {
-                    showError('ระบบหลังบ้านแจ้งว่า: ' + result.message);
-                }
+                if (dataOverview.status === 'success') renderDashboard(dataOverview.data);
+                if (dataList.status === 'success') renderEntriesList(dataList.data);
+
+                // แสดงแท็บที่เลือกอยู่
+                const activeTab = document.querySelector('.tab-btn.active').innerText.includes('รายการ') ? 'entries' : 'dashboard';
+                document.getElementById(`${activeTab}-tab`).style.display = 'block';
             } catch (error) {
-                console.error('Fetch error:', error);
-                showError('ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการดึงข้อมูล');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        function showError(msg) {
-            const errEl = document.getElementById('error-msg');
-            errEl.innerText = msg;
-            errEl.style.display = 'block';
+        // --- เรนเดอร์แท็บ: รายการ ---
+        function renderEntriesList(entries) {
+            const listEl = document.getElementById('entries-list');
+            listEl.innerHTML = '';
+
+            if (entries.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">ไม่มีรายการจดบันทึกในเดือนนี้</div>';
+                return;
+            }
+
+            entries.forEach(entry => {
+                const isExpense = (entry.type === 'รายจ่าย' || entry.type === 'expense');
+                const colorClass = isExpense ? 'expense' : 'income';
+                const dateStr = new Date(entry.timestamp).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+
+                const html = `
+          <div class="entry-card ${colorClass}" id="card-${entry.row_index}">
+            <div id="view-${entry.row_index}">
+              <div class="entry-header">
+                <span>${dateStr} | <span id="lbl-cat-${entry.row_index}">${entry.category}</span></span>
+                <span style="color: ${isExpense ? '#f44336' : '#1DB446'}">฿<span id="lbl-amt-${entry.row_index}">${entry.amount.toLocaleString()}</span></span>
+              </div>
+              <div class="entry-desc" id="lbl-desc-${entry.row_index}">${entry.description}</div>
+              <div class="entry-actions">
+                <button class="btn-small btn-edit" onclick="toggleEdit(${entry.row_index})">แก้ไข</button>
+                <button class="btn-small btn-delete" onclick="mutateEntry(${entry.row_index}, 'delete')">ลบ</button>
+              </div>
+            </div>
+            
+            <div class="edit-form" id="edit-${entry.row_index}">
+              <input type="number" id="inp-amt-${entry.row_index}" value="${entry.amount}" placeholder="จำนวนเงิน">
+              <input type="text" id="inp-desc-${entry.row_index}" value="${entry.description}" placeholder="รายละเอียด">
+              <input type="text" id="inp-cat-${entry.row_index}" value="${entry.category}" placeholder="หมวดหมู่">
+              <div class="entry-actions" style="margin-top: 5px;">
+                <button class="btn-small" style="background:#999;" onclick="toggleEdit(${entry.row_index})">ยกเลิก</button>
+                <button class="btn-small btn-edit" onclick="saveEdit(${entry.row_index})">บันทึก</button>
+              </div>
+            </div>
+
+            <div id="undo-${entry.row_index}" style="display:none; text-align:center;">
+              <div style="color:#f44336; margin-bottom:10px; font-size:14px;">ลบรายการนี้แล้ว</div>
+              <button class="btn-small btn-undo" onclick="mutateEntry(${entry.row_index}, 'undo')">↩️ กดเพื่อเลิกทำ (Undo)</button>
+            </div>
+          </div>
+        `;
+                listEl.insertAdjacentHTML('beforeend', html);
+            });
         }
 
-        // ฟังก์ชันคำนวณและวาดกราฟ
-        function renderDashboard(data) {
-            document.getElementById('dashboard').style.display = 'block';
+        function toggleEdit(rowIdx) {
+            const viewEl = document.getElementById(`view-${rowIdx}`);
+            const editEl = document.getElementById(`edit-${rowIdx}`);
+            if (viewEl.style.display === 'none') {
+                viewEl.style.display = 'block'; editEl.style.display = 'none';
+            } else {
+                viewEl.style.display = 'none'; editEl.style.display = 'flex';
+            }
+        }
 
-            // 1. อัปเดตตัวเลข
+        // --- ระบบยิง POST (แก้ไข / ลบ / เลิกทำ) ---
+        async function mutateEntry(rowIndex, action, payload = {}) {
+            if (action === 'delete' && !confirm('แน่ใจหรือไม่ที่จะลบรายการนี้?')) return;
+
+            try {
+                // ใช้เทคนิค text/plain เพื่อหลบ CORS กฎเหล็กของ GAS
+                const postData = { idToken: idToken, action: action, payload: { row_index: rowIndex, ...payload } };
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(postData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    // อัปเดต UI ทันทีโดยไม่ต้องโหลดหน้าเว็บใหม่
+                    if (action === 'delete') {
+                        document.getElementById(`view-${rowIndex}`).style.display = 'none';
+                        document.getElementById(`edit-${rowIndex}`).style.display = 'none';
+                        document.getElementById(`undo-${rowIndex}`).style.display = 'block';
+                    } else if (action === 'undo') {
+                        document.getElementById(`undo-${rowIndex}`).style.display = 'none';
+                        document.getElementById(`view-${rowIndex}`).style.display = 'block';
+                    } else if (action === 'edit') {
+                        document.getElementById(`lbl-amt-${rowIndex}`).innerText = parseFloat(payload.amount).toLocaleString();
+                        document.getElementById(`lbl-desc-${rowIndex}`).innerText = payload.description;
+                        document.getElementById(`lbl-cat-${rowIndex}`).innerText = payload.category;
+                        toggleEdit(rowIndex);
+                    }
+                    // โหลดกราฟหน้าแดชบอร์ดใหม่แบบเงียบๆ (ซิงก์ข้อมูลให้ตรงกัน)
+                    silentRefreshOverview();
+                } else {
+                    alert('ผิดพลาด: ' + result.message);
+                }
+            } catch (err) {
+                alert('การเชื่อมต่อล้มเหลว กรุณาลองใหม่');
+            }
+        }
+
+        function saveEdit(rowIdx) {
+            const amt = document.getElementById(`inp-amt-${rowIdx}`).value;
+            const desc = document.getElementById(`inp-desc-${rowIdx}`).value;
+            const cat = document.getElementById(`inp-cat-${rowIdx}`).value;
+            mutateEntry(rowIdx, 'edit', { amount: parseFloat(amt), description: desc, category: cat });
+        }
+
+        // โหลดแดชบอร์ดซ้ำเงียบๆ หลังมีการอัปเดตข้อมูล
+        async function silentRefreshOverview() {
+            const month = document.getElementById('month-picker').value;
+            const overviewUrl = `${GAS_URL}?api=overview&userId=${userId}&month=${month}`;
+            const res = await fetch(overviewUrl);
+            const data = await res.json();
+            if (data.status === 'success') renderDashboard(data.data);
+        }
+
+        // --- เรนเดอร์แท็บ: แดชบอร์ด (กราฟเดิม) ---
+        function renderDashboard(data) {
             document.getElementById('total-income').innerText = '฿' + data.incomeTotal.toLocaleString('th-TH');
             document.getElementById('total-expense').innerText = '฿' + data.expenseTotal.toLocaleString('th-TH');
-
-            // พาเลตต์สีสำหรับกราฟ
             const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4'];
-
-            // 2. กราฟ 1: ภาพรวม
-            createDonutChart('overviewChart',
-                ['รายรับ', 'รายจ่าย'],
-                [data.incomeTotal, data.expenseTotal],
-                ['#1DB446', '#f44336']
-            );
-
-            // 3. กราฟ 2: รายจ่าย
-            const expLabels = Object.keys(data.expensesByCategory);
-            const expData = Object.values(data.expensesByCategory);
-            createDonutChart('expenseChart', expLabels, expData, colors);
-
-            // 4. กราฟ 3: รายรับ
-            const incLabels = Object.keys(data.incomesByCategory);
-            const incData = Object.values(data.incomesByCategory);
-            createDonutChart('incomeChart', incLabels, incData, colors);
+            createDonutChart('overviewChart', ['รายรับ', 'รายจ่าย'], [data.incomeTotal, data.expenseTotal], ['#1DB446', '#f44336']);
+            createDonutChart('expenseChart', Object.keys(data.expensesByCategory), Object.values(data.expensesByCategory), colors);
+            createDonutChart('incomeChart', Object.keys(data.incomesByCategory), Object.values(data.incomesByCategory), colors);
         }
 
-        // ฟังก์ชันวาดกราฟโดนัท (ใช้ซ้ำ)
         function createDonutChart(canvasId, labels, data, bgColors) {
             const ctx = document.getElementById(canvasId).getContext('2d');
-
-            if (charts[canvasId]) {
-                charts[canvasId].destroy(); // เคลียร์กราฟเก่าทิ้ง
-            }
-
-            // ถ้าไม่มีข้อมูลเลย ให้แสดงโดนัทสีเทา
-            if (data.length === 0 || data.every(v => v === 0)) {
-                labels = ['ไม่มีข้อมูล'];
-                data = [1];
-                bgColors = ['#e0e0e0'];
-            }
-
-            charts[canvasId] = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: bgColors,
-                        borderWidth: 2,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { family: 'Kanit' } } }
-                    }
-                }
-            });
+            if (charts[canvasId]) charts[canvasId].destroy();
+            if (data.length === 0 || data.every(v => v === 0)) { labels = ['ไม่มีข้อมูล']; data = [1]; bgColors = ['#e0e0e0']; }
+            charts[canvasId] = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ data: data, backgroundColor: bgColors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Kanit' } } } } } });
         }
 
         window.onload = main;
