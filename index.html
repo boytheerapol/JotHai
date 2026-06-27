@@ -6,133 +6,299 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JotHai Dashboard</title>
 
-    <!-- นำเข้าฟอนต์ Kanit -->
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
-    <!-- นำเข้า LIFF SDK -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body {
             margin: 0;
-            padding: 0;
+            padding: 15px;
             font-family: "Kanit", sans-serif;
-            background: linear-gradient(to right, #edf2f4, #d9e9f5);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #f4f7f6;
+            color: #333;
         }
 
         .container {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 400px;
-            padding: 30px 20px;
-            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
         h1 {
-            color: #03a9f4;
-            margin-bottom: 5px;
-            font-size: 26px;
+            text-align: center;
+            color: #1DB446;
+            margin-bottom: 20px;
+            font-size: 24px;
         }
 
-        .profile-img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 15px auto;
-            display: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 18px;
+            color: #555;
+            margin-top: 0;
+        }
+
+        /* กล่องค้นหา */
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .filter-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: "Kanit", sans-serif;
+            font-size: 14px;
         }
 
         .btn {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            font-family: "Kanit", sans-serif;
-            background-color: #1DB446;
+            padding: 10px 20px;
+            background: #1DB446;
             color: #fff;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s ease;
+            font-family: "Kanit", sans-serif;
             font-weight: 500;
         }
 
-        .btn:hover {
-            background-color: #179038;
+        /* สรุปตัวเลข */
+        .summary-box {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
 
-        #status {
-            margin-top: 15px;
-            font-weight: 500;
-            color: #555;
-            font-size: 16px;
-            line-height: 1.5;
+        .summary-item {
+            text-align: center;
+            width: 48%;
+            padding: 15px 0;
+            border-radius: 8px;
+            background: #fafafa;
         }
 
-        .success {
+        .income-text {
             color: #1DB446;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
+            margin-top: 5px;
         }
 
-        .error {
+        .expense-text {
             color: #f44336;
-            font-size: 14px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* กราฟ */
+        .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+
+        #loading {
+            text-align: center;
+            color: #888;
+            margin: 30px 0;
+            font-size: 16px;
+        }
+
+        #error-msg {
+            text-align: center;
+            color: #f44336;
+            margin: 20px 0;
+            display: none;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>📊 JotHai Dashboard</h1>
-        <img id="profile-image" class="profile-img" src="" alt="Profile">
-        <div id="status">⏳ กำลังเตรียมการเชื่อมต่อ...</div>
-        <div id="action-area"></div>
+        <h1>📊 สรุปการเงินของคุณ</h1>
+
+        <div class="card">
+            <div class="filter-group">
+                <input type="month" id="month-picker">
+                <button class="btn" onclick="loadData()">ค้นหา</button>
+            </div>
+            <div class="filter-group">
+                <input type="text" id="hashtag-filter" placeholder="กรองด้วยแฮชแท็ก เช่น #อาหาร">
+            </div>
+        </div>
+
+        <div id="loading">⏳ กำลังประมวลผลข้อมูล...</div>
+        <div id="error-msg"></div>
+
+        <div id="dashboard" style="display: none;">
+
+            <div class="summary-box">
+                <div class="summary-item">
+                    <div style="font-size: 14px; color: #666;">รายรับรวม</div>
+                    <div class="income-text" id="total-income">฿0</div>
+                </div>
+                <div class="summary-item">
+                    <div style="font-size: 14px; color: #666;">รายจ่ายรวม</div>
+                    <div class="expense-text" id="total-expense">฿0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>สัดส่วน รายรับ-รายจ่าย</h2>
+                <div class="chart-container"><canvas id="overviewChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <h2>วิเคราะห์รายจ่าย</h2>
+                <div class="chart-container"><canvas id="expenseChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <h2>วิเคราะห์รายรับ</h2>
+                <div class="chart-container"><canvas id="incomeChart"></canvas></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // LIFF ID ล่าสุดของคุณ
-        const liffId = "2010529543-LkVEFzhx";
+        const LIFF_ID = "2010529543-LkVEFzhx";
 
-        const statusEl = document.getElementById('status');
-        const actionArea = document.getElementById('action-area');
-        const profileImg = document.getElementById('profile-image');
+        // ⚠️ นำ Web App URL ของ Google Apps Script มาใส่ตรงนี้ครับ ⚠️
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyfh7wTfcOue6G7xStHmBTzTFrVlyeNepjj193x089dWE3GII7lWquV101SRoQITqDw/exec";
 
+        let userId = "";
+        let charts = {}; // เก็บตัวแปรกราฟไว้เพื่อทำลายก่อนวาดใหม่ (ป้องกันบั๊กกราฟซ้อนกัน)
+
+        // ตั้งค่า Default ตัวเลือกเดือน ให้เป็นเดือนปัจจุบัน
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('month-picker').value = currentMonth;
+
+        // เริ่มต้นทำงาน
         async function main() {
-            try {
-                await liff.init({
-                    liffId: liffId,
-                    withLoginOnExternalBrowser: true
-                });
-
-                if (liff.isLoggedIn()) {
-                    const profile = await liff.getProfile();
-
-                    // แสดงรูปโปรไฟล์ถ้ามี
-                    if (profile.pictureUrl) {
-                        profileImg.src = profile.pictureUrl;
-                        profileImg.style.display = "block";
-                    }
-
-                    statusEl.innerHTML = `<span class="success">สวัสดีคุณ ${profile.displayName} 🎉</span><br><br>เชื่อมต่อ LIFF บน Vercel สำเร็จ 100% ลื่นไหลแน่นอนครับ!`;
-                    actionArea.innerHTML = '';
-                } else {
-                    statusEl.innerHTML = '<span class="error">กรุณายืนยันตัวตนเพื่อใช้งาน</span>';
-                    actionArea.innerHTML = `<button class="btn" onclick="liff.login()">🚀 เข้าสู่ระบบด้วย LINE</button>`;
-                }
-            } catch (err) {
-                console.error(err);
-                statusEl.innerHTML = `<span class="error">ข้อผิดพลาด: ${err.message}</span>`;
+            await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                userId = profile.userId; // ดึง User ID ไว้ใช้กรองข้อมูล
+                loadData(); // สั่งดึงข้อมูลทันที
+            } else {
+                liff.login();
             }
         }
 
-        // เริ่มทำงานทันทีที่โหลดหน้าเว็บเสร็จ
+        // ฟังก์ชันดึงข้อมูลจาก GAS
+        async function loadData() {
+            const month = document.getElementById('month-picker').value;
+            const hashtag = document.getElementById('hashtag-filter').value.trim();
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('error-msg').style.display = 'none';
+
+            try {
+                // สร้าง URL พร้อมพารามิเตอร์ส่งไปถาม GAS
+                let url = `${GAS_URL}?api=overview&userId=${userId}&month=${month}`;
+                if (hashtag) url += `&hashtag=${encodeURIComponent(hashtag)}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    renderDashboard(result.data);
+                } else {
+                    showError('ระบบหลังบ้านแจ้งว่า: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showError('ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showError(msg) {
+            const errEl = document.getElementById('error-msg');
+            errEl.innerText = msg;
+            errEl.style.display = 'block';
+        }
+
+        // ฟังก์ชันคำนวณและวาดกราฟ
+        function renderDashboard(data) {
+            document.getElementById('dashboard').style.display = 'block';
+
+            // 1. อัปเดตตัวเลข
+            document.getElementById('total-income').innerText = '฿' + data.incomeTotal.toLocaleString('th-TH');
+            document.getElementById('total-expense').innerText = '฿' + data.expenseTotal.toLocaleString('th-TH');
+
+            // พาเลตต์สีสำหรับกราฟ
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4'];
+
+            // 2. กราฟ 1: ภาพรวม
+            createDonutChart('overviewChart',
+                ['รายรับ', 'รายจ่าย'],
+                [data.incomeTotal, data.expenseTotal],
+                ['#1DB446', '#f44336']
+            );
+
+            // 3. กราฟ 2: รายจ่าย
+            const expLabels = Object.keys(data.expensesByCategory);
+            const expData = Object.values(data.expensesByCategory);
+            createDonutChart('expenseChart', expLabels, expData, colors);
+
+            // 4. กราฟ 3: รายรับ
+            const incLabels = Object.keys(data.incomesByCategory);
+            const incData = Object.values(data.incomesByCategory);
+            createDonutChart('incomeChart', incLabels, incData, colors);
+        }
+
+        // ฟังก์ชันวาดกราฟโดนัท (ใช้ซ้ำ)
+        function createDonutChart(canvasId, labels, data, bgColors) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            if (charts[canvasId]) {
+                charts[canvasId].destroy(); // เคลียร์กราฟเก่าทิ้ง
+            }
+
+            // ถ้าไม่มีข้อมูลเลย ให้แสดงโดนัทสีเทา
+            if (data.length === 0 || data.every(v => v === 0)) {
+                labels = ['ไม่มีข้อมูล'];
+                data = [1];
+                bgColors = ['#e0e0e0'];
+            }
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Kanit' } } }
+                    }
+                }
+            });
+        }
+
         window.onload = main;
     </script>
 </body>
