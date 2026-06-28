@@ -1,4 +1,4 @@
-# PRD — JotHai (จดให้): LINE Expense Tracker MVP
+# PRD — JotHai (จดให้): LINE Expense Tracker MVP (v2.0 - Decoupled Architecture)
 
 ## Problem Statement
 
@@ -13,7 +13,7 @@ JotHai เป็น LINE bot ที่ผู้ใช้พิมภาษาไ
 AI (Gemini Flash-Lite) แปลข้อความ → จัดหมวด → บันทึกลง Google Sheet ทันที
 บอทส่ง Receipt card กลับพร้อมปุ่มแก้ไขทันที ไม่ต้องยืนยันก่อนบันทึก
 LIFF dashboard (เปิดในตัว LINE) แสดงภาพรวม 3 มิติพร้อม chart + รายการแก้ไขได้
-ทุกอย่างรันบน Google Apps Script — ไม่มี server ไม่มีค่าใช้จ่าย
+**[อัปเดตสถาปัตยกรรมล่าสุด]**: แยกระบบ Frontend (หน้า Dashboard) ไปโฮสต์บน GitHub Pages เพื่อทะลวงข้อจำกัด Iframe Sandbox ของ LIFF ทำให้โหลดเร็วและปรับแต่ง UI ได้เต็มที่ ในขณะที่ Backend ทั้งหมดยังคงรันบน Google Apps Script แบบ 100% API (ไม่มี server ไม่มีค่าใช้จ่าย)
 
 ## User Stories
 
@@ -21,7 +21,7 @@ LIFF dashboard (เปิดในตัว LINE) แสดงภาพรวม
 
 1. As a user, I want to type a natural Thai expense message (e.g. "กาแฟ 50"), so that it gets saved as an Entry without any extra steps.
 2. As a user, I want to type an income message (e.g. "เงินเดือน 30000"), so that it's classified as income automatically.
-3. As a user, I want to include hashtags in my message (e.g. "ข้าวผัด 80 #ทริปเชียงใหม่"), so that I can group entries across categories later.
+3. As a user, I want to include hashtags in my message (e.g. "ข้าวผัด 80 #ทริปเชียงใหม่"), so that I can group entries across categories later. _(อัปเดต: AI จะถูกบังคับดึงเฉพาะคำที่มีเครื่องหมาย `#` เท่านั้น ห้ามคิดแฮชแท็กเองเด็ดขาดเพื่อป้องกันข้อมูลกระจัดกระจาย)_
 4. As a user, I want the bot to ask me for the amount if I forgot to include one (e.g. "ซื้อของ"), so that no entry is lost due to incomplete input.
 5. As a user, I want the clarification state to be cancelled if I send a new unrelated message, so that I'm not stuck waiting for a response.
 6. As a user, I want entries to be saved immediately (optimistic save), so that recording feels fast and habitual.
@@ -36,7 +36,7 @@ LIFF dashboard (เปิดในตัว LINE) แสดงภาพรวม
 12. As a user, I want to change the category directly from the Receipt via quick reply buttons, so that I can correct wrong categories immediately.
 13. As a user, I want to delete an entry directly from the Receipt, so that accidental or duplicate entries can be removed.
 
-### LIFF Dashboard — ภาพรวม
+### LIFF Dashboard — ภาพรวม (บน GitHub Pages)
 
 14. As a user, I want to open a dashboard from the LINE Rich Menu, so that I can view my monthly financial overview without leaving LINE.
 15. As a user, I want to see a donut chart of income vs. expense for the current month, so that I understand my overall balance at a glance.
@@ -45,14 +45,14 @@ LIFF dashboard (เปิดในตัว LINE) แสดงภาพรวม
 18. As a user, I want to switch between months in the dashboard, so that I can review past months.
 19. As a user, I want to filter the dashboard by hashtag, so that I can see totals for a specific trip or project.
 
-### LIFF Dashboard — จัดการรายการ
+### LIFF Dashboard — จัดการรายการ (บน GitHub Pages)
 
 20. As a user, I want to see a list of all active entries for the current month in the dashboard, so that I can review them after receipts have scrolled away in chat.
 21. As a user, I want to edit the amount of an entry from the entry list, so that I can correct typos without deleting and re-entering.
 22. As a user, I want to edit the description of an entry from the entry list, so that I can add context to entries recorded in shorthand.
-23. As a user, I want to delete an entry from the entry list with a soft delete, so that the data isn't permanently lost.
+23. As a user, I want to delete an entry from the entry list with a soft delete, so that the data isn't permanently lost. _(อัปเดต: ใช้ SweetAlert2 ในการทำ Popup ยืนยันการลบแบบ Native-like ไม่มี URL กวนใจ)_
 24. As a user, I want to undo a deleted entry from the entry list, so that I can recover accidental deletions.
-25. As a user, I want to change the category of an entry from the entry list, so that I can reclassify entries recorded with Gemini fallback.
+25. As a user, I want to change the category of an entry from the entry list, so that I can reclassify entries recorded with Gemini fallback. _(อัปเดต: ใช้ Dynamic Dropdown ที่ดึงข้อมูลหมวดหมู่แบบ Real-time มาจาก Sheet Categories)_
 
 ### การเข้าถึงและ Onboarding
 
@@ -63,37 +63,32 @@ LIFF dashboard (เปิดในตัว LINE) แสดงภาพรวม
 
 ### Rich Menu
 
-30. As a user, I want to see a persistent "📊 ดูสรุป" button at the bottom of the LINE chat, so that I can open the dashboard with one tap anytime.
+30. As a user, I want to see a persistent "📊 ดูสรุป" button at the bottom of the LINE chat, so that I can open the dashboard with one tap anytime. _(อัปเดต: ตั้งค่าผ่าน LINE OA Manager ชี้ URL ไปที่ LIFF)_
 
 ## Implementation Decisions
 
 ### Modules to build/modify
 
 - **`Config.gs`** — constants: Script Properties keys, Gemini model string, timezone (`Asia/Bangkok`), TTL values
-- **`Code.gs`** — `doPost(e)` webhook router; `doGet(e)` LIFF page + data API router (`?api=overview`, `?api=list`, write POST)
+- **`Code.gs`** (Backend Router) — ฟังก์ชัน `doGet(e)` ทำหน้าที่เป็น Data API ส่ง JSON กลับไปให้ Frontend (`?api=overview`, `?api=list`), และฟังก์ชัน `doPost(e)` ทำหน้าที่รับแขก 2 ทางคือ (1) LINE Webhook และ (2) รับคำสั่ง Write POST จาก LIFF
+- **`index.html`** (Frontend บน GitHub Pages) — โค้ด HTML/JS ประกอบด้วยแท็บ Dashboard และ รายการ, ใช้ Fetch API ติดต่อกับ GAS, ใช้ Chart.js วาดกราฟ และ SweetAlert2 สำหรับแจ้งเตือน
 - **`Line.gs`** — `reply(replyToken, messages)`, `buildReceiptFlex(entry)`, quick reply for category selection
 - **`Gemini.gs`** — `parseEntry(text, categories)` calling Gemini Flash-Lite + regex fallback path
 - **`Sheet.gs`** — `addEntry()`, `editEntry()`, `deleteEntry()` (soft), `undoDelete()`, `getCategories()`, user lookup
 - **`Access.gs`** — `checkUser(userId)` returning status; `logPending(userId, displayName)`
 - **`State.gs`** — clarification state via `CacheService` with TTL; `PropertiesService` for welcome flag
 - **`Overview.gs`** — aggregation by month/category/hashtag → JSON for LIFF API
-- **`liff.html`** — 4-tab LIFF page: 3 donut charts + "รายการ" tab with inline edit/delete/undo
-
-### Key interfaces
-
-- `parseEntry(text, categories)` → `{ type, amount, description, category, hashtags, source }` where `source` is `"ai"` or `"fallback"`; `amount = 0` signals need for clarification
-- `addEntry(userId, parsed, rawText)` → `entry_id`
-- `editEntry(entryId, userId, fields)` → verifies ownership before mutating
-- `deleteEntry(entryId, userId)` → soft delete (status = `"deleted"`)
-- `checkUser(userId)` → `"approved"` | `"pending"` | `"unknown"`
 
 ### Gemini integration
 
 - Model: Gemini Flash-Lite (verify current model string in AI Studio before coding)
-- Force JSON output via `responseMimeType: "application/json"` + `responseSchema` if supported; otherwise prompt-only instruction
-- JSON schema: `{ type, amount, description, category, hashtags }` — see design-notes for full schema
+- Force JSON output via `responseMimeType: "application/json"`
+- **Strict Prompting Rules (อัปเดต):**
+  1. หากบริบทกำกวม ให้บังคับ type เป็น "expense" ไว้ก่อน
+  2. Description ต้องตัดจำนวนเงิน, หน่วยเงิน และ แฮชแท็กออก
+  3. Hashtag ต้องสกัดเฉพาะคำที่มีเครื่องหมาย `#` นำหน้า ห้ามคิดเองเด็ดขาด
+  4. ห้ามสร้างหมวดหมู่ใหม่ที่นอกเหนือจาก Categories ที่ส่งไปให้
 - `amount = 0` means "no amount found" → enters clarification flow
-- Wrap all `JSON.parse()` in try/catch → any exception falls through to regex fallback
 
 ### Regex fallback (ADR-0006)
 
@@ -119,48 +114,24 @@ If regex also finds no amount → enters clarification flow.
 **Categories:** `category | type | keywords` — config tab, 13 expense + 5 income seed values
 **Users:** `user_id | display_name | status | joined_at`
 
-### LIFF security (ADR-0005)
+### LIFF security (ADR-0005) & CORS Bypass
 
 The write endpoint (`doPost` from LIFF) must verify the caller's LIFF `idToken` against LINE's token introspection endpoint server-side. The verified `userId` is then checked against the entry's `user_id` before any mutation. Never trust a plain `userId` from the request body.
-
-### Bot tone
-
-Friendly, casual, close. End messages with "นะคะ/ค่ะ/นะ". Max 1 emoji per message.
-Error strings are defined in design-notes.md.
+_(อัปเดต: ใช้เทคนิคการส่ง Fetch API ด้วย Headers `Content-Type: text/plain` เพื่อข้ามการตรวจจับ CORS ของ Google Apps Script ทำให้สามารถทำ POST request จาก GitHub Pages ได้อย่างสมบูรณ์)_
 
 ## Testing Decisions
-
-### What makes a good test
-
-Test external behavior visible through the two top-level seams — not internal function calls. A test should describe what a user or LINE sends in, and what comes out (Sheet state + bot reply). Do not mock the Sheet or Gemini in integration tests; test against the real bound Sheet in a staging deployment.
 
 ### Seams to test
 
 **Seam 1 — `doPost(e)`** (LINE webhook): covers the full bot pipeline
+(ทดสอบการทำงานของบอท, การตรวจจับผู้ใช้, Clarification, Regex fallback และการจัดการ Receipt ตามเอกสารต้นฉบับ)
 
-- Access control: unknown user → pending log + rejection reply; pending user → rejection; approved user → pass
-- Happy path: "กาแฟ 50 #cafe" → new active row in Entries + Receipt reply with correct fields
-- Income detection: "เงินเดือน 30000" → type=income, correct category
-- Hashtag normalization: "#Cafe" stored as "cafe"; "#ทริป" stored as "ทริป"
-- Clarification: "กินข้าว" → bot asks amount → "80" → Entry completed
-- Clarification cancel: "กินข้าว" → bot asks → "กาแฟ 50" → cancel reply + new entry saved
-- Regex fallback: simulate Gemini failure → Entry saved with source=fallback, category=อื่นๆ
-- Postback: toggle type, change category, delete → Sheet reflects change
-- Welcome: admin changes status to approved → Welcome message sent once only
-- Help: "help" or "วิธีใช้" → help message returned
+**Seam 2 — `doGet(e)` + `doPost(e)`** (LIFF data API & Mutations): covers the dashboard pipeline
 
-**Seam 2 — `doGet(e)` + write endpoint** (LIFF data API): covers the dashboard pipeline
-
-- `?api=overview` → returns correct monthly totals matching Sheet
-- `?api=list` → returns only active entries for the requesting user's month
-- Write endpoint with valid idToken → edit/delete/undo mutates Sheet
-- Write endpoint with idToken belonging to user A trying to mutate user B's entry → rejected
-- Month filter: entries from other months excluded
-- Hashtag filter: only entries with matching hashtag returned
-
-### Prior art
-
-No existing test files in the codebase. Manual verification is the primary test method: deploy to staging Web App, send messages via real LINE staging channel, and observe Sheet state + bot replies. All verification is manual per the project's testing approach.
+- `?api=overview` → ส่งคืนผลรวมรายเดือนสำหรับวาดกราฟ (รวมการกรองด้วยเดือน/Hashtag)
+- `?api=list` → ส่งคืนรายการ active ในเดือนนั้น พร้อมแนบ `categories` จาก Sheet กลับมาสร้าง Dropdown
+- Write endpoint (POST) ด้วย `idToken` → ตรวจสอบสำเร็จ และสามารถ Edit, Delete, Undo บรรทัดของตัวเองได้
+- Cross-user mutation → ต้องถูกปฏิเสธโดยเซิร์ฟเวอร์ทันทีหากนำ Token ของ User A ไปแก้ข้อมูล User B
 
 ## Out of Scope
 
@@ -175,9 +146,6 @@ No existing test files in the codebase. Manual verification is the primary test 
 
 ## Further Notes
 
-- **Build order:** Echo webhook first (Phase 1), access control second (Phase 2), then AI parse + save (Phase 3) — this isolates "is the pipeline connected?" from "is the AI correct?"
-- **LIFF is the highest risk area:** `liff.init()` in LINE's in-app browser, viewport on mobile, idToken verification, and GAS CORS behavior all require extra debugging time (Phase 6 estimated 3–4 days)
-- **Gemini model string:** Must be verified in Google AI Studio immediately before coding Phase 3 — the string changes frequently and training-data knowledge is unreliable
-- **LINE webhook retries:** `doPost` must return HTTP 200 as early as possible to prevent duplicate entries from LINE's retry mechanism
+- **Decoupled Architecture Win:** การย้าย LIFF page ออกไปอยู่บน GitHub Pages ถือเป็นการปลดล็อกความยุ่งยากของ Iframe Sandbox และ Performance ของระบบได้ 100% ทำให้ต่อยอดด้วยไลบรารีใหม่ๆ (เช่น Tailwind, React) ในอนาคตได้ง่ายมาก
 - **Execution time budget:** The full parse → save → reply cycle must complete well under GAS's 6-minute limit; the reply token expires in ~1 minute, so Gemini latency is the critical path
 - **Categories tab is config, not code:** Adding or renaming categories requires only a Sheet edit — no code deployment needed

@@ -1,16 +1,14 @@
-// Script Properties keys
-var PROP_LINE_CHANNEL_TOKEN = 'LINE_CHANNEL_TOKEN';
-var PROP_LINE_CHANNEL_SECRET = 'LINE_CHANNEL_SECRET';
-var PROP_GEMINI_API_KEY = 'GEMINI_API_KEY';
-var PROP_LIFF_ID = 'LIFF_ID';
+const CONFIG = {
+  // Spreadsheet ID ของโปรเจกต์
+  SHEET_ID: PropertiesService.getScriptProperties().getProperty("SHEET_ID"),
 
-// Sheet tab names
-var TAB_ENTRIES = 'Entries';
-var TAB_CATEGORIES = 'Categories';
-var TAB_USERS = 'Users';
+  // ดึงค่า Token จาก Project Settings > Script Properties
+  LINE_ACCESS_TOKEN:
+    PropertiesService.getScriptProperties().getProperty("LINE_ACCESS_TOKEN"),
+  GEMINI_API_KEY:
+    PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY"),
+  LIFF_ID: PropertiesService.getScriptProperties().getProperty("LIFF_ID"),
 
-// Timezone
-var TZ = 'Asia/Bangkok';
-
-// LINE API
-var LINE_REPLY_URL = 'https://api.line.me/v2/bot/message/reply';
+  TIMEZONE: "Asia/Bangkok",
+  CLARIFICATION_TTL_SECONDS: 600,
+};

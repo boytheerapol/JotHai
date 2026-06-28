@@ -81,31 +81,32 @@ The entire backend runs as a single **Google Apps Script project bound to the Go
 LINE user → LINE Platform
   ↓ webhook (HTTP POST)
 doPost() in Code.gs
-  ↓
-Access.gs → checkUser(userId) against Users tab
-  ↓
-Gemini.gs → parseEntry(text, categories) via Gemini Flash-Lite
-  ↓ (on AI failure) → regex fallback (Gemini.gs)
-  ↓
-Sheet.gs → addEntry() → Entries tab
-  ↓
-Line.gs → buildReceiptFlex() → reply() via LINE Messaging API
+  ↓ routes on payload type
+  ├─ postback event → action dispatch:
+  │    toggle_type / change_category / save_edit / delete / save_delete
+  ├─ message event → handleUserAccess() (Access.gs)
+  │    → getClarificationState() (State.gs)
+  │    → parseEntry() / parseWithRegex() (Gemini.gs)
+  │    → addEntry() (Sheet.gs)
+  │    → buildReceiptFlex() → reply() (Line.gs)
+  └─ LIFF write (idToken + action in body) → handleLiffApiRequest()
+       → verifyLineIdToken() → Sheet mutation (edit/delete/undo)
 ```
 
 **LIFF (dashboard) flow:**
 
 ```
-LINE user → Rich Menu button → opens LIFF URL
-  ↓ liff.init() in liff.html
-  ↓ GET /exec?api=overview  → Overview.gs aggregates Entries
-  ↓ GET /exec?api=list      → Sheet.gs returns active entries for month
-  ↓ POST /exec (edit/delete/undo) → verify LIFF idToken → Sheet.gs mutation
+LINE user → Rich Menu button → opens LIFF URL (GitHub Pages index.html)
+  ↓ liff.init() in index.html
+  ↓ GET /exec?api=overview&userId=...&month=... → Code.gs aggregates Entries inline → JSON
+  ↓ GET /exec?api=list&userId=...&month=...     → Code.gs returns entries + categories → JSON
+  ↓ POST /exec (edit/delete/undo) → verifyLineIdToken() in Code.gs → Sheet mutation
 ```
 
 Key entry points:
 
-- `Code.gs` — `doPost(e)` (LINE webhook), `doGet(e)` (LIFF page + data API router)
-- `liff.html` — served by `doGet`, runs entirely in the LINE in-app browser
+- `Code.gs` — `doPost(e)` (LINE webhook + LIFF write API), `doGet(e)` (data API router: `?api=overview`, `?api=list`)
+- `index.html` — LIFF frontend hosted on GitHub Pages (not served by GAS); calls GAS `/exec` for data
 
 ---
 
@@ -126,15 +127,15 @@ Key entry points:
 
 ```
 JotHai/                        ← GAS project root (open in Apps Script editor)
-├── Code.gs                    # doPost (webhook router), doGet (LIFF + API router)
-├── Line.gs                    # reply(), buildReceiptFlex() — LINE API wrappers
-├── Gemini.gs                  # parseEntry(text, categories) + regex fallback
-├── Sheet.gs                   # CRUD: addEntry, editEntry, deleteEntry, getCategories, user lookup
-├── Access.gs                  # checkUser(userId), logPending(userId, displayName)
-├── State.gs                   # Clarification state via PropertiesService / CacheService
-├── Overview.gs                # Aggregation: monthly totals, by-category, by-hashtag → JSON
-├── Config.gs                  # Constants: Script Properties keys, model string, TZ, quota limits
-├── liff.html                  # LIFF page: 3 chart tabs + "รายการ" tab, Chart.js, month/hashtag filter
+├── Code.gs                    # doPost (webhook + LIFF write API), doGet (data API: ?api=overview, ?api=list)
+├── Line.gs                    # reply(), replyText(), buildReceiptFlex(), buildConfirmEditFlex(), buildConfirmDeleteFlex(), replyWithTypeQuickReply(), replyWithCategoryQuickReply()
+├── Gemini.gs                  # parseEntry(text) → Gemini Flash-Lite call; parseWithRegex(text) → regex fallback
+├── Sheet.gs                   # getSheet(), addEntry(), getEntryById(), updateEntryFields(), deleteEntryStatus(), getCategoriesString(), getCategoriesArray(), getUserStatus(), addUser(), setupDatabase()
+├── Access.gs                  # handleUserAccess(userId, replyToken) — status check, auto-register new users
+├── State.gs                   # CacheService: setClarificationState/getClarificationState/clearClarificationState (TTL=600s); PropertiesService: isUserWelcomed/setUserWelcomed
+├── Config.gs                  # CONFIG object: SHEET_ID, LINE_ACCESS_TOKEN, GEMINI_API_KEY, LIFF_ID, TIMEZONE, CLARIFICATION_TTL_SECONDS
+│                              # (Overview.gs not yet implemented — ?api=overview logic is inline in Code.gs)
+├── index.html                 # LIFF frontend hosted on GitHub Pages: tabs ภาพรวม / หมวดหมู่ / แฮชแท็ก / รายการ; Chart.js; edit/delete/undo via POST with idToken
 │
 ├── docs/
 │   ├── adr/                   # Architecture Decision Records (ADR-0001 through ADR-0006)
@@ -174,6 +175,7 @@ JotHai/                        ← GAS project root (open in Apps Script editor)
 - All HTTP calls use `UrlFetchApp.fetch()`. Never `fetch()` (not available in GAS).
 - Sheet access uses `SpreadsheetApp.getActiveSpreadsheet()` (bound script) — never hardcode the spreadsheet ID.
 - Script Properties accessed via `PropertiesService.getScriptProperties()`. Read secrets at call time from Properties — never cache them in global variables.
+- Shared constants are in the `CONFIG` object in `Config.gs` (`TIMEZONE`, `CLARIFICATION_TTL_SECONDS`, etc.). Reference via `CONFIG.X` — never inline literal values for timezone, TTL, or Sheet name.
 
 ### Naming
 
@@ -221,8 +223,9 @@ There are no npm scripts, no build step, no CLI commands. All operations are man
 Set in "Project Settings" → "Script Properties":
 
 ```
-LINE_CHANNEL_TOKEN   — Channel Access Token (long-lived)
-LINE_CHANNEL_SECRET  — Channel Secret (for webhook signature verification)
+SHEET_ID             — Sheet ID on Google Sheet
+LINE_ACCESS_TOKEN    — Channel Access Token (long-lived); used for reply() calls
+LINE_CHANNEL_SECRET  — Channel Secret (for webhook signature verification; not yet wired)
 GEMINI_API_KEY       — Gemini API key from Google AI Studio
 LIFF_ID              — LIFF app ID (format: 1234567890-AbCdEfGh)
 ```
@@ -236,7 +239,7 @@ LIFF_ID              — LIFF app ID (format: 1234567890-AbCdEfGh)
 
 ### Verify Gemini Model String
 
-Before writing any Gemini call, confirm the current Flash-Lite model string in Google AI Studio — it changes frequently. Do not rely on training-data knowledge for the model ID.
+The model string is set as `modelName` in `Gemini.gs` (currently `'gemini-3.1-flash-lite'`). Before changing it, confirm the current Flash-Lite model name in Google AI Studio — it changes frequently. Do not hardcode the model ID inline; change only the `modelName` variable in `Gemini.gs`.
 
 ---
 
@@ -246,7 +249,7 @@ Before writing any Gemini call, confirm the current Flash-Lite model string in G
 
 - **6-minute execution limit per request.** `doPost` must complete the full parse → save → reply cycle well within this.
 - **Reply token is single-use and expires in ~1 minute.** Call `Line.reply()` exactly once per event, as fast as possible. If Gemini latency risks the TTL, the regex fallback (ADR-0006) must be ready to fire immediately.
-- **No concurrent state.** GAS is single-threaded per execution. `State.gs` uses `PropertiesService` (persistent) or `CacheService` (TTL-based, ~10 min max) for Clarification state. Always set a TTL to prevent stale pending entries.
+- **No concurrent state.** GAS is single-threaded per execution. `State.gs` uses `CacheService` (TTL=600s) for Clarification state (pending-amount entries) and `PropertiesService` (persistent) for the welcome flag per user. Always rely on the TTL for clarification — never assume the user cleared state manually.
 
 ### ⚠️ LINE Webhook Behavior
 
@@ -269,8 +272,8 @@ Before writing any Gemini call, confirm the current Flash-Lite model string in G
 ### ⚠️ LIFF Development
 
 - **LIFF only works inside the LINE app** (or LINE desktop). `liff.init()` fails in a regular browser — always test via LINE.
-- **`liff.getIDToken()` returns a JWT.** The server must verify it with LINE's token introspection endpoint to get a trusted `userId`. Passing `userId` as a plain POST parameter is a security hole.
-- **GAS Web App serves LIFF via `doGet`.** The LIFF page URL and the data API URL are the same `/exec` URL — distinguish by query parameter (`?api=overview`, `?api=list`; no `api` param serves the HTML page).
+- **Frontend is on GitHub Pages, not GAS.** `index.html` is deployed to GitHub Pages; GAS `/exec` is the data API only. `doGet` does NOT serve HTML — it returns JSON for `?api=overview` and `?api=list`. Distinguish endpoints via the `api` query parameter.
+- **`liff.getIDToken()` returns a JWT.** For LIFF write calls, include `idToken` in the POST body; `verifyLineIdToken()` in `Code.gs` validates it against LINE's verify endpoint and extracts the real `userId`. Never trust a `userId` sent as a plain parameter.
 
 ### ⚠️ Thai Language / Locale
 
