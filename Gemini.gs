@@ -1,5 +1,5 @@
 function parseEntry(text) {
-  // 1. ป้องกันปัญหา Copy-Paste แล้วติดช่องว่าง (สาเหตุหลักของ 404)
+  // 1. ดึง API Key และป้องกันปัญหา Copy-Paste แล้วติดช่องว่าง
   let apiKey =
     PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
   if (!apiKey) {
@@ -10,8 +10,15 @@ function parseEntry(text) {
   }
   apiKey = apiKey.trim();
 
-  // 2. ใช้ชื่อ Model ที่เสถียรที่สุดในตอนนี้ (อ้างอิงจาก PRD ที่ต้องการใช้ตระกูล Flash)
-  const modelName = "gemini-3.1-flash-lite";
+  // 2. ดึงชื่อ Model จาก Script Properties (ยืดหยุ่นต่อการเปลี่ยน Model ในอนาคต)
+  let modelName =
+    PropertiesService.getScriptProperties().getProperty("GEMINI_MODEL_NAME");
+  if (!modelName) {
+    // ค่า Default ในกรณีที่ยังไม่ได้ไปตั้งค่าตัวแปรนี้ใน Script Properties
+    modelName = "gemini-3.1-flash-lite";
+  }
+  modelName = modelName.trim();
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   const categories = getCategoriesString();
@@ -131,7 +138,8 @@ function parseWithRegex(text) {
   let hashtags = [];
   let m;
   while ((m = hashtagRegex.exec(text)) !== null) {
-    hashtags.push(m[1].toLowerCase()); // ทำให้เป็นตัวพิมพ์เล็กทั้งหมด
+    hashtags.push(m[1].toLowerCase());
+    // ทำให้เป็นตัวพิมพ์เล็กทั้งหมด
   }
 
   // ตั้งค่า Default ของ Fallback ตาม PRD

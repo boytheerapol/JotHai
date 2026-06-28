@@ -27,3 +27,7 @@ desktop.ini
 
 # Node (if tooling is ever added)
 node_modules/
+
+bash.exe.stackdump
+.claude\hooks\bash.exe.stackdump
+.claude\logs\tool-usage.log
