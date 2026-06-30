@@ -1,3 +1,19 @@
+// Design-system colors for Flex cards — copied from docs/design-system.md §2
+// (Flex JSON cannot read CSS variables; hex is mirrored from the token table.)
+const FLEX = {
+  incomeFill: "#16C784",
+  expenseFill: "#FF5C7C",
+  incomeText: "#0F7A4A",
+  expenseText: "#CB2A30",
+  brand: "#7C3AED",
+  brandSubtle: "#F1EBFE",
+  info: "#2B6BFF",
+  warningFill: "#FFF3CD",
+  warningText: "#8A6100",
+  textSecondary: "#4B4458",
+  textMuted: "#6E6880",
+};
+
 // ฟังก์ชันส่งข้อความหลัก รองรับ Message Object ทุกรูปแบบ (Text, Flex)
 function reply(replyToken, messagesArray) {
   const url = "https://api.line.me/v2/bot/message/reply";
@@ -30,7 +46,7 @@ function replyText(replyToken, text) {
 // ฟังก์ชันวาดสลิปใบเสร็จ (Receipt Flex Card)
 function buildReceiptFlex(entryId, parsed, source) {
   const isExpense = parsed.type === "expense";
-  const typeColor = isExpense ? "#FF4B4B" : "#1DB446"; // แดง (รายจ่าย) / เขียว (รายรับ)
+  const typeColor = isExpense ? FLEX.expenseFill : FLEX.incomeFill; // coral (รายจ่าย) / green (รายรับ)
   const typeText = isExpense ? "รายจ่าย" : "รายรับ";
 
   // จัด Format Hashtag ให้แสดงผลสวยงาม (เติม # ข้างหน้า)
@@ -45,6 +61,15 @@ function buildReceiptFlex(entryId, parsed, source) {
     contents: {
       type: "bubble",
       size: "kilo",
+      // Top accent bar by type — Flex depth replacement for the web's left stripe (§7.10)
+      header: {
+        type: "box",
+        layout: "vertical",
+        height: "6px",
+        paddingAll: "none",
+        backgroundColor: typeColor,
+        contents: [{ type: "filler" }],
+      },
       body: {
         type: "box",
         layout: "vertical",
@@ -82,7 +107,7 @@ function buildReceiptFlex(entryId, parsed, source) {
                   type: "box",
                   layout: "vertical",
                   margin: "md",
-                  backgroundColor: "#fff3cd",
+                  backgroundColor: FLEX.warningFill,
                   paddingAll: "sm",
                   cornerRadius: "md",
                   contents: [
@@ -90,7 +115,7 @@ function buildReceiptFlex(entryId, parsed, source) {
                       type: "text",
                       text: "⚠️ บันทึกด้วยระบบสำรอง (AI ขัดข้อง) หมวดหมู่อาจไม่ถูกต้อง กรุณาตรวจสอบ",
                       size: "xs",
-                      color: "#856404",
+                      color: FLEX.warningText,
                       wrap: true,
                     },
                   ],
@@ -111,14 +136,14 @@ function buildReceiptFlex(entryId, parsed, source) {
                     type: "text",
                     text: "หมวดหมู่",
                     size: "sm",
-                    color: "#aaaaaa",
+                    color: FLEX.textMuted,
                     flex: 1,
                   },
                   {
                     type: "text",
                     text: parsed.category || "อื่นๆ",
                     size: "sm",
-                    color: "#666666",
+                    color: FLEX.textSecondary,
                     flex: 2,
                     wrap: true,
                   },
@@ -132,14 +157,14 @@ function buildReceiptFlex(entryId, parsed, source) {
                     type: "text",
                     text: "แฮชแท็ก",
                     size: "sm",
-                    color: "#aaaaaa",
+                    color: FLEX.textMuted,
                     flex: 1,
                   },
                   {
                     type: "text",
                     text: hashtagText,
                     size: "sm",
-                    color: "#666666",
+                    color: FLEX.textSecondary,
                     flex: 2,
                     wrap: true,
                   },
@@ -184,7 +209,7 @@ function buildReceiptFlex(entryId, parsed, source) {
           {
             type: "button",
             style: "link", // แถวล่างทำเป็น Text Link สีแดง
-            color: "#FF4B4B",
+            color: FLEX.expenseText,
             height: "sm",
             action: {
               type: "postback",
@@ -253,7 +278,7 @@ function buildConfirmEditFlex(entry, previewType, previewCategory) {
   const displayCat = previewCategory || entry.category;
 
   const isExpense = displayType === "expense";
-  const typeColor = isExpense ? "#FF4B4B" : "#1DB446";
+  const typeColor = isExpense ? FLEX.expenseFill : FLEX.incomeFill;
   const typeText = isExpense ? "รายจ่าย" : "รายรับ";
 
   let hashtagText = "-";
@@ -276,14 +301,14 @@ function buildConfirmEditFlex(entry, previewType, previewCategory) {
       header: {
         type: "box",
         layout: "vertical",
-        backgroundColor: "#f8f9fa",
+        backgroundColor: FLEX.brandSubtle,
         contents: [
           {
             type: "text",
             text: "ตรวจสอบก่อนบันทึก",
             weight: "bold",
             size: "sm",
-            color: "#555555",
+            color: FLEX.textSecondary,
           },
         ],
       },
@@ -329,7 +354,7 @@ function buildConfirmEditFlex(entry, previewType, previewCategory) {
                     type: "text",
                     text: "หมวดหมู่",
                     size: "sm",
-                    color: "#aaaaaa",
+                    color: FLEX.textMuted,
                     flex: 1,
                   },
                   // เน้นสีฟ้าถ้ามีการเปลี่ยนแปลงหมวดหมู่
@@ -337,7 +362,7 @@ function buildConfirmEditFlex(entry, previewType, previewCategory) {
                     type: "text",
                     text: displayCat,
                     size: "sm",
-                    color: previewCategory ? "#007BFF" : "#666666",
+                    color: previewCategory ? FLEX.info : FLEX.textSecondary,
                     weight: previewCategory ? "bold" : "regular",
                     flex: 2,
                     wrap: true,
@@ -352,14 +377,14 @@ function buildConfirmEditFlex(entry, previewType, previewCategory) {
                     type: "text",
                     text: "แฮชแท็ก",
                     size: "sm",
-                    color: "#aaaaaa",
+                    color: FLEX.textMuted,
                     flex: 1,
                   },
                   {
                     type: "text",
                     text: hashtagText,
                     size: "sm",
-                    color: "#666666",
+                    color: FLEX.textSecondary,
                     flex: 2,
                     wrap: true,
                   },
@@ -377,7 +402,7 @@ function buildConfirmEditFlex(entry, previewType, previewCategory) {
           {
             type: "button",
             style: "primary",
-            color: "#007BFF",
+            color: FLEX.brand,
             height: "sm",
             action: {
               type: "postback",
@@ -407,7 +432,7 @@ function buildConfirmDeleteFlex(entry) {
             type: "text",
             text: "⚠️ ยืนยันการลบ",
             weight: "bold",
-            color: "#FF4B4B",
+            color: FLEX.expenseText,
             size: "lg",
           },
           {
@@ -427,7 +452,7 @@ function buildConfirmDeleteFlex(entry) {
           {
             type: "button",
             style: "primary",
-            color: "#FF4B4B",
+            color: FLEX.expenseFill,
             height: "sm",
             action: {
               type: "postback",
