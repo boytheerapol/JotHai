@@ -8,6 +8,16 @@
 
 ## Workflow Orchestration
 
+### 0. Session Start (auto-injected by hooks)
+
+Three files are automatically injected into context at session start via `SessionStart` hooks in `.claude/settings.json`:
+
+- `tasks/lessons.md` — correction patterns; skim before working
+- `docs/PRD.md` (Problem Statement + User Stories) — product requirements anchor
+- `docs/design-system.md` (§2 Color tokens + §9 Surface consistency checklist) — visual spec; **this file wins over code**
+
+---
+
 **Tradeoff:** These guidelines bias toward caution and rigor over raw speed. Use judgment for trivial, obvious changes — don't over-process a one-line fix.
 
 **"Trivial" means:** ≤1–2 files, no new dependency, no schema/API change, obviously correct (typo, rename, comment). Anything else is non-trivial — apply the full workflow.

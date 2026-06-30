@@ -7,6 +7,11 @@
             "type": "command",
             "command": ".claude/hooks/load-lessons.sh",
             "description": "Inject tasks/lessons.md into context at session start (pairs with CLAUDE Template (Project) )"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/load-project-docs.sh",
+            "description": "Inject PRD.md (Problem + User Stories) and design-system.md (§2 color tokens + §9 checklist) into context at session start"
           }
         ]
       }

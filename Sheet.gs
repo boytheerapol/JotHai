@@ -179,6 +179,35 @@ function getEntryById(entryId) {
   return null;
 }
 
+// อัปเดตวันที่ของรายการ (เก็บเวลาเดิมไว้ เปลี่ยนแค่ วัน/เดือน/ปี)
+// dateStr มาจาก datetimepicker รูปแบบ "YYYY-MM-DD"
+function updateEntryDate(entryId, dateStr) {
+  const sheet = getSheet("Entries");
+  const data = sheet.getDataRange().getValues();
+  const parts = dateStr.split("-");
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const d = parseInt(parts[2], 10);
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === entryId) {
+      // ดึงเวลาเดิม (ชั่วโมง/นาที) ตาม Asia/Bangkok แล้วประกอบกับวันที่ใหม่
+      const oldTimestamp = data[i][2];
+      const hh = parseInt(
+        Utilities.formatDate(oldTimestamp, CONFIG.TIMEZONE, "H"),
+        10,
+      );
+      const mm = parseInt(
+        Utilities.formatDate(oldTimestamp, CONFIG.TIMEZONE, "m"),
+        10,
+      );
+      const newTimestamp = new Date(y, m - 1, d, hh, mm);
+      sheet.getRange(i + 1, 3).setValue(newTimestamp); // คอลัมน์ C (index 3) คือ timestamp
+      return true;
+    }
+  }
+  return false;
+}
+
 // อัปเดตข้อมูล (รองรับทั้งการเปลี่ยนประเภท และ เปลี่ยนหมวดหมู่)
 function updateEntryFields(entryId, newType, newCategory) {
   const sheet = getSheet("Entries");

@@ -32,42 +32,27 @@ function doPost(e) {
 
         const action = params["action"];
         const entryId = params["id"];
+        // ค่าจาก datetimepicker (ปุ่ม "แก้วันที่") จะอยู่ใน event.postback.params.date
+        const pickerParams = event.postback.params || {};
 
-        // 1. กดปุ่ม "สลับประเภท" บนใบเสร็จแรก
-        if (action === "toggle_type") {
-          replyWithTypeQuickReply(replyToken, entryId);
-        }
-        // 1.1 เลือกประเภทใหม่แล้ว -> โชว์พรีวิว
-        else if (action === "select_type") {
-          const entry = getEntryById(entryId);
-          if (entry) {
-            const flexCard = buildConfirmEditFlex(entry, params["type"], null);
-            reply(replyToken, [flexCard]);
-          }
-        }
-        // 2. กดปุ่ม "เปลี่ยนหมวด" บนใบเสร็จแรก
-        else if (action === "change_category") {
+        // 1. กดปุ่ม "เปลี่ยนหมวด" บนใบเสร็จ -> โชว์ Quick Reply หมวดหมู่
+        if (action === "change_category") {
           const categories = getCategoriesArray();
           replyWithCategoryQuickReply(replyToken, entryId, categories);
         }
-        // 2.1 เลือกหมวดหมู่ใหม่แล้ว -> โชว์พรีวิว
+        // 1.1 เลือกหมวดหมู่ใหม่แล้ว -> บันทึกทันที + ส่งการ์ดใหม่
         else if (action === "select_category") {
-          const entry = getEntryById(entryId);
-          if (entry) {
-            const flexCard = buildConfirmEditFlex(entry, null, params["cat"]);
-            reply(replyToken, [flexCard]);
-          }
+          updateEntryCategory(entryId, params["cat"]);
+          sendUpdatedReceipt(replyToken, entryId);
         }
-        // 3. กดยืนยันการแก้ไขข้อมูล (รับมาจาก 1.1 หรือ 2.1)
-        else if (action === "save_edit") {
-          const success = updateEntryFields(entryId, params["t"], params["c"]);
-          if (success) {
-            replyText(replyToken, `อัปเดตข้อมูลเรียบร้อยแล้วค่ะ ✅`);
-          } else {
-            replyText(replyToken, "❌ ไม่พบรายการนี้ในระบบค่ะ");
+        // 2. เลือกวันที่ใหม่จาก date picker -> บันทึกทันที + ส่งการ์ดใหม่
+        else if (action === "set_date") {
+          if (pickerParams.date) {
+            updateEntryDate(entryId, pickerParams.date);
           }
+          sendUpdatedReceipt(replyToken, entryId);
         }
-        // 4. กดปุ่ม "ลบรายการ" บนใบเสร็จแรก -> โชว์พรีวิว Danger Alert
+        // 3. กดปุ่ม "ลบรายการ" บนใบเสร็จ -> โชว์พรีวิว Danger Alert
         else if (action === "delete") {
           const entry = getEntryById(entryId);
           if (entry) {
@@ -157,7 +142,12 @@ function doPost(e) {
             });
           } else {
             const entryId = addEntry(userId, parsed, textToParse, sourceStr);
-            const flexCard = buildReceiptFlex(entryId, parsed, sourceStr);
+            const flexCard = buildReceiptFlex(
+              entryId,
+              parsed,
+              sourceStr,
+              new Date(),
+            );
 
             if (sourceStr === "fallback") {
               replyMessages.push({

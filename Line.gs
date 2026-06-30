@@ -43,32 +43,129 @@ function replyText(replyToken, text) {
   reply(replyToken, [{ type: "text", text: text }]);
 }
 
+// ชื่อย่อเดือนภาษาไทย (index 0 = ม.ค.)
+const THAI_MONTHS_SHORT = [
+  "ม.ค.",
+  "ก.พ.",
+  "มี.ค.",
+  "เม.ย.",
+  "พ.ค.",
+  "มิ.ย.",
+  "ก.ค.",
+  "ส.ค.",
+  "ก.ย.",
+  "ต.ค.",
+  "พ.ย.",
+  "ธ.ค.",
+];
+
+// แปลงวันที่เป็นรูปแบบไทยสั้น เช่น "30 มิ.ย. 2026" (เฉพาะวันที่ ไม่มีเวลา) ตาม Asia/Bangkok
+function formatThaiDate(date) {
+  const d = Utilities.formatDate(date, CONFIG.TIMEZONE, "d");
+  const monthIdx = parseInt(Utilities.formatDate(date, CONFIG.TIMEZONE, "M"), 10) - 1;
+  const year = Utilities.formatDate(date, CONFIG.TIMEZONE, "yyyy");
+  return `${d} ${THAI_MONTHS_SHORT[monthIdx]} ${year}`;
+}
+
+// อีโมจิประจำหมวดหมู่ (ใช้เป็นลูกเล่นบนการ์ด) — หมวดที่ไม่ได้แม็พจะใช้ default
+const CATEGORY_EMOJI = {
+  อาหาร: "🍜",
+  เดินทาง: "🚗",
+  ช้อปปิ้ง: "🛒",
+  ค่าอยู่ค่ากิน: "🏠",
+  เงินเดือน: "💰",
+  บันเทิง: "🎮",
+  สุขภาพ: "💊",
+  บิล: "🧾",
+  อื่นๆ: "🧾",
+};
+
+function getCategoryEmoji(category, type) {
+  if (category && CATEGORY_EMOJI[category]) return CATEGORY_EMOJI[category];
+  return type === "income" ? "💰" : "🧾";
+}
+
 // ฟังก์ชันวาดสลิปใบเสร็จ (Receipt Flex Card)
-function buildReceiptFlex(entryId, parsed, source) {
+// หมายเหตุ: การ์ดนี้ใช้อีโมจิ ~2 จุด (หัวการ์ด + chip หมวด) จงใจเกินกติกา §8 (1 อีโมจิ/ข้อความ)
+// ของ design-system เพื่อเพิ่มลูกเล่น — เป็น divergence ที่จดไว้ในโค้ดเท่านั้น ไม่แก้ design-system.md
+function buildReceiptFlex(entryId, parsed, source, timestamp) {
   const isExpense = parsed.type === "expense";
   const typeColor = isExpense ? FLEX.expenseFill : FLEX.incomeFill; // coral (รายจ่าย) / green (รายรับ)
   const typeText = isExpense ? "รายจ่าย" : "รายรับ";
+  const emoji = getCategoryEmoji(parsed.category, parsed.type);
 
-  // จัด Format Hashtag ให้แสดงผลสวยงาม (เติม # ข้างหน้า)
-  let hashtagText = "-";
+  // จำนวนเงินใส่ comma คั่นหลักพัน เช่น 30000 -> 30,000
+  const amountText = Number(parsed.amount).toLocaleString("en-US");
+
+  // chip สำหรับหมวดหมู่ และ แฮชแท็ก (ถ้ามี)
+  const chips = [
+    {
+      type: "box",
+      layout: "vertical",
+      flex: 0,
+      backgroundColor: FLEX.brandSubtle,
+      cornerRadius: "md",
+      paddingAll: "sm",
+      paddingStart: "md",
+      paddingEnd: "md",
+      contents: [
+        {
+          type: "text",
+          text: `${emoji} ${parsed.category || "อื่นๆ"}`,
+          size: "sm",
+          color: FLEX.textSecondary,
+        },
+      ],
+    },
+  ];
   if (parsed.hashtags && parsed.hashtags.trim() !== "") {
-    hashtagText = "#" + parsed.hashtags.trim().replace(/\s+/g, " #");
+    const hashtagText = "#" + parsed.hashtags.trim().replace(/\s+/g, " #");
+    chips.push({
+      type: "box",
+      layout: "vertical",
+      flex: 0,
+      backgroundColor: FLEX.brandSubtle,
+      cornerRadius: "md",
+      paddingAll: "sm",
+      paddingStart: "md",
+      paddingEnd: "md",
+      contents: [
+        {
+          type: "text",
+          text: hashtagText,
+          size: "sm",
+          color: FLEX.textSecondary,
+        },
+      ],
+    });
   }
+  chips.push({ type: "filler" });
+
+  const dateStr = Utilities.formatDate(timestamp, CONFIG.TIMEZONE, "yyyy-MM-dd");
+  const todayStr = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, "yyyy-MM-dd");
 
   return {
     type: "flex",
-    altText: `บันทึก${typeText}: ${parsed.amount} บาท (${parsed.description})`,
+    altText: `บันทึก${typeText}: ${amountText} บาท (${parsed.description})`,
     contents: {
       type: "bubble",
       size: "kilo",
-      // Top accent bar by type — Flex depth replacement for the web's left stripe (§7.10)
+      // แถบหัวการ์ดเต็มความกว้างตามประเภท — ตัวอักษรขาวตัวใหญ่ผ่าน AA-large (§2)
       header: {
         type: "box",
         layout: "vertical",
-        height: "6px",
-        paddingAll: "none",
         backgroundColor: typeColor,
-        contents: [{ type: "filler" }],
+        paddingAll: "md",
+        paddingStart: "lg",
+        contents: [
+          {
+            type: "text",
+            text: typeText,
+            weight: "bold",
+            color: "#FFFFFF",
+            size: "lg",
+          },
+        ],
       },
       body: {
         type: "box",
@@ -76,25 +173,24 @@ function buildReceiptFlex(entryId, parsed, source) {
         contents: [
           {
             type: "text",
-            text: typeText,
-            weight: "bold",
-            color: typeColor,
-            size: "sm",
-          },
-          {
-            type: "text",
-            text: parsed.description || "ไม่มีชื่อรายการ",
+            text: `${emoji} ${parsed.description || "ไม่มีชื่อรายการ"}`,
             weight: "bold",
             size: "xl",
-            margin: "md",
             wrap: true,
           },
           {
             type: "text",
-            text: `฿ ${parsed.amount}`,
+            text: `฿ ${amountText}`,
             size: "xxl",
             color: typeColor,
             weight: "bold",
+            margin: "sm",
+          },
+          {
+            type: "text",
+            text: formatThaiDate(timestamp),
+            size: "sm",
+            color: FLEX.textMuted,
             margin: "sm",
           },
           {
@@ -124,53 +220,10 @@ function buildReceiptFlex(entryId, parsed, source) {
             : []),
           {
             type: "box",
-            layout: "vertical",
+            layout: "horizontal",
             margin: "xl",
             spacing: "sm",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "หมวดหมู่",
-                    size: "sm",
-                    color: FLEX.textMuted,
-                    flex: 1,
-                  },
-                  {
-                    type: "text",
-                    text: parsed.category || "อื่นๆ",
-                    size: "sm",
-                    color: FLEX.textSecondary,
-                    flex: 2,
-                    wrap: true,
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "แฮชแท็ก",
-                    size: "sm",
-                    color: FLEX.textMuted,
-                    flex: 1,
-                  },
-                  {
-                    type: "text",
-                    text: hashtagText,
-                    size: "sm",
-                    color: FLEX.textSecondary,
-                    flex: 2,
-                    wrap: true,
-                  },
-                ],
-              },
-            ],
+            contents: chips,
           },
         ],
       },
@@ -190,8 +243,8 @@ function buildReceiptFlex(entryId, parsed, source) {
                 height: "sm",
                 action: {
                   type: "postback",
-                  label: "สลับประเภท",
-                  data: `action=toggle_type&id=${entryId}`,
+                  label: "เปลี่ยนหมวด",
+                  data: `action=change_category&id=${entryId}`,
                 },
               },
               {
@@ -199,9 +252,12 @@ function buildReceiptFlex(entryId, parsed, source) {
                 style: "secondary",
                 height: "sm",
                 action: {
-                  type: "postback",
-                  label: "เปลี่ยนหมวด",
-                  data: `action=change_category&id=${entryId}`,
+                  type: "datetimepicker",
+                  label: "แก้วันที่",
+                  data: `action=set_date&id=${entryId}`,
+                  mode: "date",
+                  initial: dateStr,
+                  max: todayStr,
                 },
               },
             ],
@@ -223,33 +279,24 @@ function buildReceiptFlex(entryId, parsed, source) {
   };
 }
 
-// ส่ง Quick Reply สำหรับเลือกประเภท (รายรับ/รายจ่าย)
-function replyWithTypeQuickReply(replyToken, entryId) {
-  const message = {
-    type: "text",
-    text: "เลือกประเภทที่ต้องการเปลี่ยนได้เลยค่ะ 👇",
-    quickReply: {
-      items: [
-        {
-          type: "action",
-          action: {
-            type: "postback",
-            label: "🔴 รายจ่าย",
-            data: `action=select_type&id=${entryId}&type=expense`,
-          },
-        },
-        {
-          type: "action",
-          action: {
-            type: "postback",
-            label: "🟢 รายรับ",
-            data: `action=select_type&id=${entryId}&type=income`,
-          },
-        },
-      ],
-    },
+// ดึงรายการล่าสุดจาก Sheet แล้วส่ง Receipt การ์ดใหม่ (ใช้หลังแก้หมวด/วันที่)
+// source = "edited" เพื่อไม่โชว์กล่องเตือน fallback (ผู้ใช้ตรวจรายการแล้ว)
+function sendUpdatedReceipt(replyToken, entryId) {
+  const entry = getEntryById(entryId);
+  if (!entry) {
+    replyText(replyToken, "❌ ไม่พบรายการนี้ในระบบค่ะ");
+    return;
+  }
+  const parsedLike = {
+    type: entry.type,
+    amount: entry.amount,
+    description: entry.description,
+    category: entry.category,
+    hashtags: entry.hashtags,
   };
-  reply(replyToken, [message]);
+  reply(replyToken, [
+    buildReceiptFlex(entry.id, parsedLike, "edited", entry.timestamp),
+  ]);
 }
 
 // อัปเดต Quick Reply ของหมวดหมู่ (เปลี่ยนชื่อ action เป็น select_category เพื่อรอการยืนยัน)
@@ -270,150 +317,6 @@ function replyWithCategoryQuickReply(replyToken, entryId, categories) {
       quickReply: { items: quickReplyItems },
     },
   ]);
-}
-
-// สร้าง Flex Message พรีวิวเพื่อยืนยันการแก้ไขข้อมูล
-function buildConfirmEditFlex(entry, previewType, previewCategory) {
-  const displayType = previewType || entry.type;
-  const displayCat = previewCategory || entry.category;
-
-  const isExpense = displayType === "expense";
-  const typeColor = isExpense ? FLEX.expenseFill : FLEX.incomeFill;
-  const typeText = isExpense ? "รายจ่าย" : "รายรับ";
-
-  let hashtagText = "-";
-  if (entry.hashtags && entry.hashtags.trim() !== "") {
-    hashtagText = "#" + entry.hashtags.trim().replace(/\s+/g, " #");
-  }
-
-  // หยอดตัวแปรใหม่เข้าไปในปุ่ม "ยืนยันการแก้ไข" (t = type, c = category)
-  let postbackData = `action=save_edit&id=${entry.id}`;
-  if (previewType) postbackData += `&t=${previewType}`;
-  if (previewCategory)
-    postbackData += `&c=${encodeURIComponent(previewCategory)}`;
-
-  return {
-    type: "flex",
-    altText: "พรีวิวการแก้ไขข้อมูล",
-    contents: {
-      type: "bubble",
-      size: "kilo",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: FLEX.brandSubtle,
-        contents: [
-          {
-            type: "text",
-            text: "ตรวจสอบก่อนบันทึก",
-            weight: "bold",
-            size: "sm",
-            color: FLEX.textSecondary,
-          },
-        ],
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: typeText,
-            weight: "bold",
-            color: typeColor,
-            size: "sm",
-          },
-          {
-            type: "text",
-            text: entry.description,
-            weight: "bold",
-            size: "xl",
-            margin: "md",
-            wrap: true,
-          },
-          {
-            type: "text",
-            text: `฿ ${entry.amount}`,
-            size: "xxl",
-            color: typeColor,
-            weight: "bold",
-            margin: "sm",
-          },
-          { type: "separator", margin: "xl" },
-          {
-            type: "box",
-            layout: "vertical",
-            margin: "xl",
-            spacing: "sm",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "หมวดหมู่",
-                    size: "sm",
-                    color: FLEX.textMuted,
-                    flex: 1,
-                  },
-                  // เน้นสีฟ้าถ้ามีการเปลี่ยนแปลงหมวดหมู่
-                  {
-                    type: "text",
-                    text: displayCat,
-                    size: "sm",
-                    color: previewCategory ? FLEX.info : FLEX.textSecondary,
-                    weight: previewCategory ? "bold" : "regular",
-                    flex: 2,
-                    wrap: true,
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "แฮชแท็ก",
-                    size: "sm",
-                    color: FLEX.textMuted,
-                    flex: 1,
-                  },
-                  {
-                    type: "text",
-                    text: hashtagText,
-                    size: "sm",
-                    color: FLEX.textSecondary,
-                    flex: 2,
-                    wrap: true,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        spacing: "sm",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            color: FLEX.brand,
-            height: "sm",
-            action: {
-              type: "postback",
-              label: "ยืนยันการแก้ไข",
-              data: postbackData,
-            },
-          },
-        ],
-      },
-    },
-  };
 }
 
 // สร้าง Flex Message เพื่อยืนยันการลบ (Danger Alert)
