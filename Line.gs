@@ -59,25 +59,42 @@ const THAI_MONTHS_SHORT = [
   "ธ.ค.",
 ];
 
-// แปลงวันที่เป็นรูปแบบไทยสั้น เช่น "30 มิ.ย. 2026" (เฉพาะวันที่ ไม่มีเวลา) ตาม Asia/Bangkok
+// ชื่อย่อวันในสัปดาห์ภาษาไทย เรียงแบบ ISO (index 0 = จันทร์ ... 6 = อาทิตย์)
+const THAI_WEEKDAYS_SHORT = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
+
+// แปลงวันที่เป็นรูปแบบไทยสั้น เช่น "จ. 30 มิ.ย. 2026" (เฉพาะวันที่ ไม่มีเวลา) ตาม Asia/Bangkok
 function formatThaiDate(date) {
+  const weekdayIdx = parseInt(Utilities.formatDate(date, CONFIG.TIMEZONE, "u"), 10) - 1;
   const d = Utilities.formatDate(date, CONFIG.TIMEZONE, "d");
   const monthIdx = parseInt(Utilities.formatDate(date, CONFIG.TIMEZONE, "M"), 10) - 1;
   const year = Utilities.formatDate(date, CONFIG.TIMEZONE, "yyyy");
-  return `${d} ${THAI_MONTHS_SHORT[monthIdx]} ${year}`;
+  return `${THAI_WEEKDAYS_SHORT[weekdayIdx]} ${d} ${THAI_MONTHS_SHORT[monthIdx]} ${year}`;
 }
 
-// อีโมจิประจำหมวดหมู่ (ใช้เป็นลูกเล่นบนการ์ด) — หมวดที่ไม่ได้แม็พจะใช้ default
+// อีโมจิประจำหมวดหมู่ (ใช้เป็นลูกเล่นบนการ์ด) — คีย์ตรงกับ seed categories ใน Categories tab
+// หมวดที่ไม่ได้แม็พจะใช้ default ใน getCategoryEmoji
 const CATEGORY_EMOJI = {
+  // รายจ่าย (seed)
   อาหาร: "🍜",
-  เดินทาง: "🚗",
-  ช้อปปิ้ง: "🛒",
-  ค่าอยู่ค่ากิน: "🏠",
-  เงินเดือน: "💰",
-  บันเทิง: "🎮",
+  "เดินทาง/รถ": "🚗",
+  ของใช้จำเป็น: "🧺",
+  ช้อปปิ้ง: "🛍",
+  สาธารณูปโภค: "💡",
+  ผ่อนบ้าน: "🏠",
   สุขภาพ: "💊",
-  บิล: "🧾",
+  บันเทิง: "🎮",
+  การศึกษา: "📚",
+  ครอบครัว: "👪",
+  "ออมเงิน/ลงทุน": "📈",
+  "งาน/ธุรกิจ": "💼",
   อื่นๆ: "🧾",
+  // รายรับ (seed)
+  เงินเดือน: "💰",
+  โบนัส: "🎁",
+  "ค้าขาย/ธุรกิจ": "🏪",
+  "ดอกเบี้ย/ปันผล": "🏦",
+  // custom ที่พบบ่อย
+  ท่องเที่ยว: "✈️",
 };
 
 function getCategoryEmoji(category, type) {
@@ -86,11 +103,14 @@ function getCategoryEmoji(category, type) {
 }
 
 // ฟังก์ชันวาดสลิปใบเสร็จ (Receipt Flex Card)
-// หมายเหตุ: การ์ดนี้ใช้อีโมจิ ~2 จุด (หัวการ์ด + chip หมวด) จงใจเกินกติกา §8 (1 อีโมจิ/ข้อความ)
-// ของ design-system เพื่อเพิ่มลูกเล่น — เป็น divergence ที่จดไว้ในโค้ดเท่านั้น ไม่แก้ design-system.md
+// หมายเหตุ divergence จาก design-system (จดในโค้ดเท่านั้น ไม่แก้ design-system.md):
+//  1) ใช้อีโมจิ ~2 จุด (หัวการ์ด + chip หมวด) เกินกติกา §8 (1 อีโมจิ/ข้อความ)
+//  2) หัวการ์ดใช้ linearGradient ซึ่ง §1 ห้าม gradient บน Flex — จงใจเพื่อดู production-grade
+//     (สีทั้งคู่มาจาก FLEX token อยู่แล้ว + มี backgroundColor เป็น fallback ให้ client เก่า)
 function buildReceiptFlex(entryId, parsed, source, timestamp) {
   const isExpense = parsed.type === "expense";
   const typeColor = isExpense ? FLEX.expenseFill : FLEX.incomeFill; // coral (รายจ่าย) / green (รายรับ)
+  const bandStart = isExpense ? FLEX.expenseText : FLEX.incomeText; // ปลายเข้มของ gradient
   const typeText = isExpense ? "รายจ่าย" : "รายรับ";
   const emoji = getCategoryEmoji(parsed.category, parsed.type);
 
@@ -151,10 +171,17 @@ function buildReceiptFlex(entryId, parsed, source, timestamp) {
       type: "bubble",
       size: "kilo",
       // แถบหัวการ์ดเต็มความกว้างตามประเภท — ตัวอักษรขาวตัวใหญ่ผ่าน AA-large (§2)
+      // gradient เข้ม->สด (backgroundColor เป็น fallback เมื่อ client ไม่รองรับ background)
       header: {
         type: "box",
         layout: "vertical",
         backgroundColor: typeColor,
+        background: {
+          type: "linearGradient",
+          angle: "135deg",
+          startColor: bandStart,
+          endColor: typeColor,
+        },
         paddingAll: "md",
         paddingStart: "lg",
         contents: [
@@ -179,12 +206,28 @@ function buildReceiptFlex(entryId, parsed, source, timestamp) {
             wrap: true,
           },
           {
-            type: "text",
-            text: `฿ ${amountText}`,
-            size: "xxl",
-            color: typeColor,
-            weight: "bold",
+            // ลำดับชั้นจำนวนเงิน: ฿ ตัวเล็ก + ตัวเลขตัวใหญ่เด่น (baseline ให้ชิดเส้นฐานเดียวกัน)
+            type: "box",
+            layout: "baseline",
             margin: "sm",
+            contents: [
+              {
+                type: "text",
+                text: "฿",
+                size: "md",
+                color: typeColor,
+                weight: "bold",
+                flex: 0,
+              },
+              {
+                type: "text",
+                text: ` ${amountText}`,
+                size: "xxl",
+                color: typeColor,
+                weight: "bold",
+                flex: 0,
+              },
+            ],
           },
           {
             type: "text",
@@ -243,7 +286,7 @@ function buildReceiptFlex(entryId, parsed, source, timestamp) {
                 height: "sm",
                 action: {
                   type: "postback",
-                  label: "เปลี่ยนหมวด",
+                  label: "🏷 เปลี่ยนหมวด",
                   data: `action=change_category&id=${entryId}`,
                 },
               },
@@ -253,7 +296,7 @@ function buildReceiptFlex(entryId, parsed, source, timestamp) {
                 height: "sm",
                 action: {
                   type: "datetimepicker",
-                  label: "แก้วันที่",
+                  label: "📅 แก้วันที่",
                   data: `action=set_date&id=${entryId}`,
                   mode: "date",
                   initial: dateStr,
@@ -269,7 +312,7 @@ function buildReceiptFlex(entryId, parsed, source, timestamp) {
             height: "sm",
             action: {
               type: "postback",
-              label: "ลบรายการ",
+              label: "🗑 ลบรายการ",
               data: `action=delete&id=${entryId}`,
             },
           },

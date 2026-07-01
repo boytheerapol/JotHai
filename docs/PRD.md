@@ -1,4 +1,5 @@
 # PRD — JotHai (จดให้): LINE Expense Tracker MVP (v2.0 - Decoupled Architecture)
+<!-- markdownlint-disable MD029 -->
 
 ## Problem Statement
 
@@ -32,9 +33,10 @@ LIFF dashboard (เปิดในตัว LINE) แสดงภาพรวม
 
 9. As a user, I want to receive a Receipt card after every saved entry, so that I can immediately verify what was recorded.
 10. As a user, I want the Receipt to show type, amount, description, category, and hashtags, so that I can spot errors quickly.
-11. As a user, I want to toggle income/expense type directly from the Receipt, so that I can fix AI misclassification without retyping.
+11. ~~As a user, I want to toggle income/expense type directly from the Receipt, so that I can fix AI misclassification without retyping.~~ _(ตัดออก: ความถี่น้อยมาก — ผู้ใช้ยอมรับให้ลบแล้วพิมใหม่หากประเภทผิด ADR-0003)_
 12. As a user, I want to change the category directly from the Receipt via quick reply buttons, so that I can correct wrong categories immediately.
 13. As a user, I want to delete an entry directly from the Receipt, so that accidental or duplicate entries can be removed.
+14. As a user, I want to back-date an entry directly from the Receipt using a date picker, so that entries recorded after the fact are filed under the correct date. _(ใช้ LINE datetimepicker action — ดู ADR-0007)_
 
 ### LIFF Dashboard — ภาพรวม (บน GitHub Pages)
 
