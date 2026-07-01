@@ -4,8 +4,9 @@
 > the **LIFF dashboard** (HTML/CSS on GitHub Pages), the **LINE Flex cards** (`Line.gs`), and
 > the **Chart.js charts** (inside the dashboard).
 >
-> This document is a **specification**, not implementation. `index.html` and `Line.gs` are rewritten
-> in a later phase by referencing the tokens defined here. When a value appears in this file and in code,
+> This document is a **specification**, not implementation. `index.html` has been rewritten as a
+> shell with split `css/styles.css` and `js/` modules referencing the tokens defined here.
+> `Line.gs` Flex cards are unchanged. When a value appears in this file and in code,
 > **this file wins**.
 
 ---
@@ -278,11 +279,12 @@ Each component lists its **anatomy → tokens → key states → principle**. Fu
 - **States:** static; amounts count-up on load.
 - **Principle:** meaning is doubly encoded (color + position), never color alone.
 
-### 7.3 Entry card (LIFF)
+### 7.3 Entry card + day-group header (LIFF)
 - **Anatomy:** left accent stripe (4px), description (`--text-body`, `text-primary`), category + hashtag chips, amount (right-aligned), action row.
 - **Tokens:** stripe = `income-fill`/`expense-fill` by type; amount = `income-text`/`expense-text`; hashtag chip = `brand-subtle` bg + `brand` text; fallback note uses `warning-fill`/`warning-text`.
+- **Day-group header:** date label uses `--text-label` (14px, `text-secondary`); daily subtotal (▲ รายจ่าย / ▼ รายรับ) uses **`--text-heading` (18px / 600)** so it reads as the group headline — clearly distinct from per-entry amounts which stay at `--text-label` (14px). Colors: subtotal expense = `expense-text`; subtotal income = `income-text`.
 - **States:** default / hover (row tint `brand-subtle`) / entrance (staggered rise).
-- **Principle:** scannable — type readable from the stripe color at a glance.
+- **Principle:** scannable — type readable from the stripe color at a glance; day total is the visual anchor of each group.
 
 ### 7.4 Buttons (LIFF)
 
@@ -322,6 +324,7 @@ Each component lists its **anatomy → tokens → key states → principle**. Fu
 ### 7.9 Donut chart wrapper (LIFF / Chart.js)
 - **Anatomy:** fixed-height container (~220px), centered total label, bottom legend (Kanit).
 - **Tokens:** overview donut → `income-fill` / `expense-fill`; category & hashtag donuts → `CHART_PALETTE` (§2) in order; empty ring → `CHART_EMPTY`.
+- **On-slice % labels (shipped):** top 5 slices (by value) display their `%`-of-total as a Kanit 600 12px label directly on the segment. Smaller slices and the empty-ring state show no label. Label color is auto-contrasted: `text-primary` (`#1A1523`) on fills with perceived luminance > 0.6 (e.g. lime `#A3E635`, orange `#F0A020`); `#fff` on darker fills (brand violet, pink, blue). Plugin: `chartjs-plugin-datalabels@2` (CDN global, registered once in `charts.js`). The overview donut has only 2 slices — both are labeled. The trend bar chart opts out (`datalabels: { display: false }`).
 - **Motion:** draw-in on first render (§6).
 - **Principle:** **never** use the Chart.js default palette. Income/expense meaning is fixed to its semantic colors in every chart.
 
@@ -348,7 +351,7 @@ Global header that persists across all four dashboard tabs.
 
 - **Anatomy:** a row with `‹` / `›` arrow buttons flanking a centered, tappable month label (Thai month + Buddhist-era year, e.g. "กรกฎาคม 2569"); below it a three-cell summary strip — รายรับ · รายจ่าย · คงเหลือ. A visually-hidden native `<input type="month">` sits behind the label for direct month jumps.
 - **Tokens:** arrows `text-secondary` (hover `brand`); month label `text-primary`, `--text-heading`; strip labels `text-muted` `--text-caption`; รายรับ amount `income-text`, รายจ่าย amount `expense-text`, คงเหลือ amount `income-text` when ≥0 else `expense-text`; container `surface`, `--radius-lg`, `--shadow-md`.
-- **States:** arrow press scale 0.96 (§6); month change re-fetches and re-renders the active tab only; amounts count-up on change (§6).
+- **States:** arrow press scale 0.96 (§6); month label updates **immediately** on tap (before the async fetch) — a `.spinner` ring appears alongside "กำลังโหลดข้อมูล..." and `.summary-strip` dims to opacity 0.4 while waiting; on success, amounts count-up on change (§6); on fetch error, totals reset to ฿0 (never show stale prior-month data).
 - **Principle:** the month is global context — it lives once at the top, never repeated inside a tab.
 
 ### 7.12 Segmented type toggle (LIFF)

@@ -39,10 +39,15 @@ const actions = {
 };
 
 // ---- Rendering ----
-function renderHeader() {
-  const d = state.overview || { incomeTotal: 0, expenseTotal: 0 };
+// Month label/input update on their own so the header can flip instantly on
+// arrow tap, before the (async) data fetch that renderHeader() waits on.
+function renderMonthLabel() {
   el("month-text").innerText = formatMonthLabel(state.month);
   el("month-input").value = state.month;
+}
+
+function renderHeader() {
+  const d = state.overview || { incomeTotal: 0, expenseTotal: 0 };
   animateCount(el("sum-income"), d.incomeTotal);
   animateCount(el("sum-expense"), d.expenseTotal);
 
@@ -74,6 +79,8 @@ function renderActive() {
 
 function setLoading(on) {
   el("loading").style.display = on ? "block" : "none";
+  // Dim stale totals while fetching so last month's numbers don't read as current.
+  document.querySelector(".summary-strip").classList.toggle("loading", on);
 }
 
 // ---- Data loading ----
@@ -90,6 +97,7 @@ async function fetchAll() {
 }
 
 async function loadMonth() {
+  renderMonthLabel(); // flip the header immediately, before the async fetch
   setLoading(true);
   TAB_ORDER.forEach((k) => (el(`view-${k}`).hidden = true));
   try {
@@ -98,6 +106,9 @@ async function loadMonth() {
     renderActive();
   } catch (err) {
     console.error(err);
+    // Clear stale totals so the new-month label doesn't sit above old numbers.
+    state.overview = null;
+    renderHeader();
     Swal2.fire({
       icon: "error",
       title: "เกิดข้อผิดพลาด",

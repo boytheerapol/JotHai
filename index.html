@@ -12,6 +12,7 @@
   <!-- Classic scripts (globals: liff, Chart, Swal) load before the ES module -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -52,7 +53,10 @@
       <button class="tab-btn" data-tab="entries">รายการ</button>
     </nav>
 
-    <div id="loading" class="loading">⏳ กำลังโหลดข้อมูล...</div>
+    <div id="loading" class="loading">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>กำลังโหลดข้อมูล...</span>
+    </div>
 
     <main>
       <section id="view-overview" class="view" hidden></section>

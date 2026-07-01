@@ -158,6 +158,11 @@ body {
   gap: var(--space-2);
 }
 
+.summary-strip.loading {
+  opacity: 0.4;
+  transition: opacity var(--motion-fast) var(--ease-standard);
+}
+
 .summary-cell {
   flex: 1;
   display: flex;
@@ -436,7 +441,7 @@ body {
 }
 
 .day-subtotal {
-  font: var(--text-label);
+  font: var(--text-heading);
   color: var(--color-expense-text);
 }
 
@@ -625,6 +630,30 @@ body {
   color: var(--color-text-muted);
   margin: var(--space-8) 0;
   font: var(--text-body);
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-brand);
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: var(--space-2);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
 }
 
 /* ---------- Card section title ---------- */

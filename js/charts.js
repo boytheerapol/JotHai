@@ -15,6 +15,10 @@ import {
 // Kanit everywhere (§7.9)
 Chart.defaults.font.family = "Kanit";
 
+// On-slice % labels (donut only). ChartDataLabels is a CDN global; register once,
+// then opt in/out per chart via each chart's `plugins.datalabels`.
+Chart.register(ChartDataLabels);
+
 const registry = {};
 
 function destroyIfExists(canvasId) {
@@ -32,6 +36,17 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// Readable label color per slice: dark text on light fills (lime/orange),
+// white on dark fills — via perceived luminance.
+function contrastText(hex) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "#1A1523" : "#fff";
+}
+
 // Donut. Center total is drawn as HTML by the view.
 // `showLegend` off when the view already lists rows (avoids duplication).
 export function buildDonut(canvasId, labels, values, colors, showLegend = true) {
@@ -42,11 +57,23 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
   let l = labels;
   let d = values;
   let c = colors;
-  if (d.length === 0 || d.every((v) => v === 0)) {
+  const isEmpty = d.length === 0 || d.every((v) => v === 0);
+  if (isEmpty) {
     l = ["ไม่มีข้อมูล"];
     d = [1];
     c = [CHART_EMPTY];
   }
+
+  // On-slice %: show only the 5 largest slices so many near-equal categories
+  // don't clutter the ring (deviation from §7.9 "centered total + legend" only).
+  const total = d.reduce((a, b) => a + b, 0);
+  const topIdx = new Set(
+    d
+      .map((v, i) => [v, i])
+      .sort((a, b) => b[0] - a[0])
+      .slice(0, 5)
+      .map(([, i]) => i),
+  );
 
   registry[canvasId] = new Chart(canvas.getContext("2d"), {
     type: "doughnut",
@@ -63,6 +90,15 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
           display: showLegend,
           position: "bottom",
           labels: { font: { family: "Kanit" }, boxWidth: 12 },
+        },
+        datalabels: {
+          color: (ctx) => contrastText(ctx.dataset.backgroundColor[ctx.dataIndex]),
+          font: { family: "Kanit", weight: 600, size: 12 },
+          formatter: (v, ctx) => {
+            if (isEmpty || !topIdx.has(ctx.dataIndex)) return "";
+            const pct = Math.round((v / total) * 100);
+            return pct >= 1 ? pct + "%" : "";
+          },
         },
       },
     },
@@ -109,7 +145,7 @@ export function buildTrendBar(canvasId, labels, values, highlightIndex, fillHex,
       responsive: true,
       maintainAspectRatio: false,
       animation: REDUCED_MOTION ? false : { duration: 600, easing: "easeOutQuart" },
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: false }, datalabels: { display: false } },
       scales: {
         x: {
           grid: { display: false },
