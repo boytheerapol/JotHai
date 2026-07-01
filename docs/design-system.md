@@ -342,6 +342,42 @@ Each component lists its **anatomy → tokens → key states → principle**. Fu
 - **Tokens:** warning title `expense-text` bold; confirm (danger) button `expense-fill`; minimal, no header.
 - **Principle:** destructive confirm is unmistakably red and short.
 
+### 7.11 Month-nav header (LIFF)
+
+Global header that persists across all four dashboard tabs.
+
+- **Anatomy:** a row with `‹` / `›` arrow buttons flanking a centered, tappable month label (Thai month + Buddhist-era year, e.g. "กรกฎาคม 2569"); below it a three-cell summary strip — รายรับ · รายจ่าย · คงเหลือ. A visually-hidden native `<input type="month">` sits behind the label for direct month jumps.
+- **Tokens:** arrows `text-secondary` (hover `brand`); month label `text-primary`, `--text-heading`; strip labels `text-muted` `--text-caption`; รายรับ amount `income-text`, รายจ่าย amount `expense-text`, คงเหลือ amount `income-text` when ≥0 else `expense-text`; container `surface`, `--radius-lg`, `--shadow-md`.
+- **States:** arrow press scale 0.96 (§6); month change re-fetches and re-renders the active tab only; amounts count-up on change (§6).
+- **Principle:** the month is global context — it lives once at the top, never repeated inside a tab.
+
+### 7.12 Segmented type toggle (LIFF)
+
+Two-way รายจ่าย / รายรับ switch, local to the หมวดหมู่ and เทียบเดือน tabs (JotHai has no transfer type).
+
+- **Anatomy:** pill container holding two equal-width segments with a sliding active indicator — same mechanic as Tabs (§7.1) but exactly two options and scoped to one view.
+- **Tokens:** container `surface`, `--radius-pill`, `--shadow-sm`; active segment `brand` fill + `brand-on` text; inactive `text-secondary`; indicator slides over `--motion-base` `--ease-standard`.
+- **States:** default / active / pressed (scale 0.96). Switching re-renders that view's chart + list; it does **not** re-fetch (data for both types arrives in one overview call).
+- **Principle:** distinct from the four navigation tabs — this filters *what a report shows*, tabs choose *which report*. Never more than two segments.
+
+### 7.13 Category / hashtag list row (LIFF)
+
+Ranked breakdown rows shown under the หมวดหมู่-tab donut (one component for both the หมวดหมู่ and #แท็ก sub-views).
+
+- **Anatomy:** leading rounded icon chip (category emoji, or `#` for hashtag rows) → name → trailing amount with a small `%`-of-total caption.
+- **Tokens:** icon chip bg `brand-subtle`; name `text-primary` `--text-body`; amount `income-text`/`expense-text` by the active type toggle; percent `text-muted` `--text-caption`; row divider `border`; hover row tint `brand-subtle`.
+- **States:** default / hover (row tint) / entrance (staggered 40ms rise, §6). The "ไม่มีแท็ก" bucket renders as a normal row with a neutral `—` glyph instead of an emoji.
+- **Principle:** rows are sorted high→low so the biggest driver is always first; amount color still encodes income vs expense so meaning is never color-alone.
+
+### 7.14 Trend bar chart (LIFF / Chart.js)
+
+Six-month comparison on the เทียบเดือน tab, honoring the same type toggle (§7.12).
+
+- **Anatomy:** fixed-height container (~240px); one bar per month (oldest→newest, Thai short month labels); a dashed horizontal average line with an "เฉลี่ย" label.
+- **Tokens:** bars use the **active type's semantic fill** — `expense-fill` or `income-fill`; the **current/target month** renders at full opacity while prior months use the same fill at reduced opacity (~0.45) so "this month" stands out; average line dashed `text-secondary`; grid/axis `border` + `text-muted` labels.
+- **Motion:** bars grow on first render (~600ms ease-out); skipped under reduced-motion (§6).
+- **Principle:** **never** the Chart.js default palette (§9 rule 2). Income vs expense keeps its fixed semantic fill even as a bar, so the same meaning reads the same as in every donut.
+
 ---
 
 ## 8. Personality Layer

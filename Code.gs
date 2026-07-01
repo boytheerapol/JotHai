@@ -185,6 +185,8 @@ function doGet(e) {
     return handleOverviewRequest(e);
   } else if (api === "list") {
     return handleListRequest(e); // เพิ่มการเรียกดูหน้ารายการ
+  } else if (api === "trend") {
+    return handleTrendRequest(e); // กราฟเทียบรายเดือนย้อนหลัง
   }
 
   return ContentService.createTextOutput(
@@ -242,6 +244,8 @@ function handleOverviewRequest(e) {
     let expenseTotal = 0;
     const expensesByCategory = {};
     const incomesByCategory = {};
+    const expensesByHashtag = {};
+    const incomesByHashtag = {};
 
     // 5. วนลูปอ่านข้อมูลทีละบรรทัด
     for (let i = 1; i < data.length; i++) {
@@ -281,10 +285,12 @@ function handleOverviewRequest(e) {
         incomeTotal += rAmount;
         incomesByCategory[rCategory] =
           (incomesByCategory[rCategory] || 0) + rAmount;
+        accumulateHashtags(incomesByHashtag, rHashtags, rAmount);
       } else if (rType === "รายจ่าย" || rType === "expense") {
         expenseTotal += rAmount;
         expensesByCategory[rCategory] =
           (expensesByCategory[rCategory] || 0) + rAmount;
+        accumulateHashtags(expensesByHashtag, rHashtags, rAmount);
       }
     }
 
@@ -297,6 +303,8 @@ function handleOverviewRequest(e) {
         expenseTotal: expenseTotal,
         expensesByCategory: expensesByCategory,
         incomesByCategory: incomesByCategory,
+        expensesByHashtag: expensesByHashtag,
+        incomesByHashtag: incomesByHashtag,
       },
     };
 
@@ -307,6 +315,80 @@ function handleOverviewRequest(e) {
     return ContentService.createTextOutput(
       JSON.stringify({ status: "error", message: error.message }),
     ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// --- 📌 กราฟเทียบรายเดือน: คืนยอดรายรับ/รายจ่ายของ N เดือนย้อนหลัง (รวมเดือนเป้าหมาย) ---
+function handleTrendRequest(e) {
+  const userId = e.parameter.userId;
+  if (!userId)
+    return buildJsonResponse({ status: "error", message: "Missing userId" });
+
+  const tz = CONFIG.TIMEZONE || "Asia/Bangkok";
+  const monthsBack = parseInt(e.parameter.months, 10) || 6;
+
+  // เดือนเป้าหมาย (ค่าเริ่มต้น = เดือนปัจจุบันเวลาไทย)
+  const targetMonth = e.parameter.month || Utilities.formatDate(new Date(), tz, "yyyy-MM");
+
+  // สร้างรายชื่อเดือนย้อนหลัง N เดือน (เก่า -> ใหม่) ด้วยการคำนวณเลขล้วน
+  // เพื่อไม่ให้เกิดปัญหา timezone ตอนสร้าง key
+  const anchorYear = parseInt(targetMonth.split("-")[0], 10);
+  const anchorMonth = parseInt(targetMonth.split("-")[1], 10) - 1; // 0-based
+
+  const buckets = {}; // "yyyy-MM" -> { month, incomeTotal, expenseTotal }
+  const order = [];
+  for (let k = monthsBack - 1; k >= 0; k--) {
+    let m = anchorMonth - k;
+    let y = anchorYear;
+    while (m < 0) {
+      m += 12;
+      y -= 1;
+    }
+    const key = y + "-" + String(m + 1).padStart(2, "0");
+    buckets[key] = { month: key, incomeTotal: 0, expenseTotal: 0 };
+    order.push(key);
+  }
+
+  try {
+    const sheet = SpreadsheetApp.openById(CONFIG.SHEET_ID).getSheetByName(
+      "Entries",
+    );
+    const data = sheet.getDataRange().getValues();
+
+    if (data.length > 1) {
+      const headers = data[0];
+      const col = {};
+      headers.forEach((h, i) => {
+        if (h) col[h.toString().trim().toLowerCase()] = i;
+      });
+
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const rUserId = row[col["user_id"]];
+        const rStatus = row[col["status"]];
+        const rTimestamp = row[col["timestamp"]];
+        if (!rTimestamp || rUserId !== userId || rStatus !== "active") continue;
+
+        const rMonth = Utilities.formatDate(new Date(rTimestamp), tz, "yyyy-MM");
+        const bucket = buckets[rMonth];
+        if (!bucket) continue; // อยู่นอกช่วงที่สนใจ
+
+        const rType = row[col["type"]];
+        const rAmount = parseFloat(row[col["amount"]]) || 0;
+        if (rType === "รายรับ" || rType === "income") {
+          bucket.incomeTotal += rAmount;
+        } else if (rType === "รายจ่าย" || rType === "expense") {
+          bucket.expenseTotal += rAmount;
+        }
+      }
+    }
+
+    return buildJsonResponse({
+      status: "success",
+      data: order.map((k) => buckets[k]),
+    });
+  } catch (error) {
+    return buildJsonResponse({ status: "error", message: error.message });
   }
 }
 
@@ -420,11 +502,30 @@ function returnEmptyOverview(targetMonth) {
       expenseTotal: 0,
       expensesByCategory: {},
       incomesByCategory: {},
+      expensesByHashtag: {},
+      incomesByHashtag: {},
     },
   };
   return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(
     ContentService.MimeType.JSON,
   );
+}
+
+// สะสมยอดแยกตามแฮชแท็ก: 1 รายการอาจมีหลายแท็ก (คั่นด้วยช่องว่าง) นับเข้าทุกแท็ก
+// รายการที่ไม่มีแท็ก ให้ไปรวมที่ถัง "ไม่มีแท็ก"
+function accumulateHashtags(bucket, hashtagStr, amount) {
+  const tags = (hashtagStr || "")
+    .toString()
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (tags.length === 0) {
+    bucket["ไม่มีแท็ก"] = (bucket["ไม่มีแท็ก"] || 0) + amount;
+  } else {
+    tags.forEach((t) => {
+      bucket[t] = (bucket[t] || 0) + amount;
+    });
+  }
 }
 
 // ==========================================
