@@ -6,18 +6,22 @@
 import { state } from "../state.js";
 import { formatMoney, dayKey, formatDayHeader } from "../format.js";
 import { emptyStateHTML } from "../components.js";
+import { esc } from "../esc.js";
 import { Swal2, Toast } from "../ui.js";
 
 function isExpenseType(t) {
   return t === "รายจ่าย" || t === "expense";
 }
 
-function esc(s) {
-  return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+// Pending undo auto-expiry timers, keyed by row_index (cleared on undo/re-render).
+const undoTimers = new Map();
+
+function handleMutationResult(result, onSuccess) {
+  if (result.status === "success") {
+    onSuccess();
+  } else {
+    Swal2.fire({ icon: "error", title: "ผิดพลาด", text: result.message });
+  }
 }
 
 function categoryOptions(entry) {
@@ -137,21 +141,31 @@ async function handleClick(e, actions) {
     const amount = parseFloat(document.getElementById(`inp-amt-${r}`).value);
     const description = document.getElementById(`inp-desc-${r}`).value;
     const category = document.getElementById(`inp-cat-${r}`).value;
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      Swal2.fire({
+        icon: "warning",
+        title: "กรอกจำนวนเงินไม่ถูกต้อง",
+        text: "กรุณากรอกตัวเลขที่มากกว่า 0",
+      });
+      return;
+    }
+
+    btn.disabled = true;
     const result = await actions.mutate("edit", {
       row_index: r,
       amount,
       description,
       category,
     });
-    if (result.status === "success") {
+    btn.disabled = false;
+    handleMutationResult(result, () => {
       document.getElementById(`lbl-amt-${r}`).innerText = amount.toLocaleString();
       document.getElementById(`lbl-desc-${r}`).innerText = description;
       document.getElementById(`lbl-cat-${r}`).innerText = category;
       toggleEdit(r);
       Toast.fire({ icon: "success", title: "บันทึกสำเร็จ" });
-    } else {
-      Swal2.fire({ icon: "error", title: "ผิดพลาด", text: result.message });
-    }
+    });
     return;
   }
 
@@ -167,25 +181,40 @@ async function handleClick(e, actions) {
       reverseButtons: true,
     });
     if (!confirmed.isConfirmed) return;
+
+    btn.disabled = true;
     const result = await actions.mutate("delete", { row_index: r });
-    if (result.status === "success") {
+    btn.disabled = false;
+    handleMutationResult(result, () => {
       document.getElementById(`view-${r}`).style.display = "none";
       document.getElementById(`edit-${r}`).style.display = "none";
       document.getElementById(`undo-${r}`).style.display = "block";
-    } else {
-      Swal2.fire({ icon: "error", title: "ผิดพลาด", text: result.message });
-    }
+
+      // Auto-finalize the delete if the user doesn't tap Undo within the window.
+      const timer = setTimeout(() => {
+        undoTimers.delete(r);
+        const undoEl = document.getElementById(`undo-${r}`);
+        if (undoEl) undoEl.style.display = "none";
+      }, 9000);
+      undoTimers.set(r, timer);
+    });
     return;
   }
 
   if (act === "undo") {
+    const pending = undoTimers.get(r);
+    if (pending) {
+      clearTimeout(pending);
+      undoTimers.delete(r);
+    }
+
+    btn.disabled = true;
     const result = await actions.mutate("undo", { row_index: r });
-    if (result.status === "success") {
+    btn.disabled = false;
+    handleMutationResult(result, () => {
       document.getElementById(`undo-${r}`).style.display = "none";
       document.getElementById(`view-${r}`).style.display = "block";
-    } else {
-      Swal2.fire({ icon: "error", title: "ผิดพลาด", text: result.message });
-    }
+    });
   }
 }
 
@@ -213,13 +242,15 @@ export function render(el, actions) {
   });
 
   let runningIndex = 0;
-  el.innerHTML = groups
-    .map((g) => {
-      const html = dayGroupHTML(g, runningIndex);
-      runningIndex += g.length;
-      return html;
-    })
-    .join("");
+  el.innerHTML =
+    `<h2 class="sr-only">รายการ</h2>` +
+    groups
+      .map((g) => {
+        const html = dayGroupHTML(g, runningIndex);
+        runningIndex += g.length;
+        return html;
+      })
+      .join("");
 
   // Single delegated handler (assignment replaces any prior one — no stacking).
   el.onclick = (e) => handleClick(e, actions);

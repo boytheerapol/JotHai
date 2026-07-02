@@ -64,6 +64,14 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
     c = [CHART_EMPTY];
   }
 
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute(
+    "aria-label",
+    isEmpty
+      ? "ยังไม่มีข้อมูลสำหรับกราฟวงกลม"
+      : `กราฟวงกลมแสดงสัดส่วน: ${l.map((name, i) => `${name} ${d[i].toLocaleString("th-TH")} บาท`).join(", ")}`,
+  );
+
   // On-slice %: show only the 10 largest slices so many near-equal categories
   // don't clutter the ring (deviation from §7.9 "centered total + legend" only).
   const total = d.reduce((a, b) => a + b, 0);
@@ -125,6 +133,12 @@ export function buildTrendBar(canvasId, labels, values, highlightIndex, fillHex,
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   destroyIfExists(canvasId);
+
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute(
+    "aria-label",
+    `กราฟแท่งเทียบเดือน: ${labels.map((m, i) => `${m} ${values[i].toLocaleString("th-TH")} บาท`).join(", ")}. เฉลี่ย ${Math.round(avg).toLocaleString("th-TH")} บาทต่อเดือน`,
+  );
 
   const barColors = values.map((_, i) =>
     i === highlightIndex ? fillHex : hexToRgba(fillHex, 0.45),

@@ -6,6 +6,7 @@
 import { state } from "../state.js";
 import { buildDonut } from "../charts.js";
 import { formatMoney } from "../format.js";
+import { esc } from "../esc.js";
 import { typeToggleHTML, wireTypeToggle, emptyStateHTML } from "../components.js";
 import {
   CHART_PALETTE,
@@ -58,7 +59,7 @@ export function render(el, actions) {
         return `
           <div class="breakdown-row" style="animation-delay: calc(40ms * ${i})">
             <div class="row-icon">${iconFor(name)}</div>
-            <div class="row-main"><div class="row-name">${name}</div></div>
+            <div class="row-main"><div class="row-name">${esc(name)}</div></div>
             <div class="row-right">
               <div class="row-amount ${amtClass}">${formatMoney(amount)}</div>
               <div class="row-pct">${pct}%</div>
@@ -80,7 +81,8 @@ export function render(el, actions) {
       </div>`;
   }
 
-  el.innerHTML = typeToggleHTML() + subtabsHTML + body;
+  el.innerHTML =
+    `<h2 class="sr-only">หมวดหมู่</h2>` + typeToggleHTML() + subtabsHTML + body;
 
   // Wire interactions
   wireTypeToggle(el, actions);

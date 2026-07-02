@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JotHai — สรุปการเงิน</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css" />
 
@@ -17,7 +19,9 @@
 </head>
 
 <body>
+  <a href="#main-content" class="skip-link">ข้ามไปยังเนื้อหาหลัก</a>
   <div class="app">
+    <h1 class="sr-only">JotHai — สรุปการเงิน</h1>
     <!-- §7.11 Global month-nav header (persists across all tabs) -->
     <header class="card app-header">
       <div class="month-nav">
@@ -45,12 +49,12 @@
     </header>
 
     <!-- §7.1 Four-way tab bar -->
-    <nav class="tabs" id="tabs">
+    <nav class="tabs" id="tabs" role="tablist">
       <div class="tab-indicator" id="tab-indicator"></div>
-      <button class="tab-btn active" data-tab="overview">ภาพรวม</button>
-      <button class="tab-btn" data-tab="categories">หมวดหมู่</button>
-      <button class="tab-btn" data-tab="trend">เทียบเดือน</button>
-      <button class="tab-btn" data-tab="entries">รายการ</button>
+      <button class="tab-btn active" data-tab="overview" role="tab" id="tab-overview" aria-selected="true" aria-controls="view-overview">ภาพรวม</button>
+      <button class="tab-btn" data-tab="categories" role="tab" id="tab-categories" aria-selected="false" aria-controls="view-categories">หมวดหมู่</button>
+      <button class="tab-btn" data-tab="trend" role="tab" id="tab-trend" aria-selected="false" aria-controls="view-trend">เทียบเดือน</button>
+      <button class="tab-btn" data-tab="entries" role="tab" id="tab-entries" aria-selected="false" aria-controls="view-entries">รายการ</button>
     </nav>
 
     <div id="loading" class="loading">
@@ -58,11 +62,11 @@
       <span class="spinner" aria-hidden="true"></span>
     </div>
 
-    <main>
-      <section id="view-overview" class="view" hidden></section>
-      <section id="view-categories" class="view" hidden></section>
-      <section id="view-trend" class="view" hidden></section>
-      <section id="view-entries" class="view" hidden></section>
+    <main id="main-content">
+      <section id="view-overview" class="view" role="tabpanel" aria-labelledby="tab-overview" hidden></section>
+      <section id="view-categories" class="view" role="tabpanel" aria-labelledby="tab-categories" hidden></section>
+      <section id="view-trend" class="view" role="tabpanel" aria-labelledby="tab-trend" hidden></section>
+      <section id="view-entries" class="view" role="tabpanel" aria-labelledby="tab-entries" hidden></section>
     </main>
   </div>
 

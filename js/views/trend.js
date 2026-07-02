@@ -33,7 +33,7 @@ export function render(el, actions) {
       </div>`
     : emptyStateHTML("ยังไม่มีข้อมูลย้อนหลังให้เทียบเลยนะคะ ✨");
 
-  el.innerHTML = typeToggleHTML() + body;
+  el.innerHTML = `<h2 class="sr-only">เทียบเดือน</h2>` + typeToggleHTML() + body;
   wireTypeToggle(el, actions);
 
   if (hasData) {

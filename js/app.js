@@ -65,7 +65,9 @@ function moveTabIndicator() {
 
 function updateTabButtons() {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.tab === state.activeTab);
+    const isActive = btn.dataset.tab === state.activeTab;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-selected", String(isActive));
   });
 }
 
@@ -81,6 +83,10 @@ function setLoading(on) {
   el("loading").style.display = on ? "flex" : "none";
   // Dim stale totals while fetching so last month's numbers don't read as current.
   document.querySelector(".summary-strip").classList.toggle("loading", on);
+  // Block double-taps on month nav while a fetch is in flight.
+  el("prev-month").disabled = on;
+  el("next-month").disabled = on;
+  el("month-input").disabled = on;
 }
 
 // ---- Data loading ----
@@ -96,15 +102,22 @@ async function fetchAll() {
   state.categories = ls.categories;
 }
 
+// Discards a response if a newer loadMonth() call started after it —
+// prevents a slow month-N response from overwriting a faster month-N+1 one.
+let loadToken = 0;
+
 async function loadMonth() {
+  const myToken = ++loadToken;
   renderMonthLabel(); // flip the header immediately, before the async fetch
   setLoading(true);
   TAB_ORDER.forEach((k) => (el(`view-${k}`).hidden = true));
   try {
     await fetchAll();
+    if (myToken !== loadToken) return;
     renderHeader();
     renderActive();
   } catch (err) {
+    if (myToken !== loadToken) return;
     console.error(err);
     // Clear stale totals so the new-month label doesn't sit above old numbers.
     state.overview = null;
@@ -115,7 +128,7 @@ async function loadMonth() {
       text: "ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
     });
   } finally {
-    setLoading(false);
+    if (myToken === loadToken) setLoading(false);
   }
 }
 

@@ -138,21 +138,30 @@ Key entry points:
 ```
 JotHai/                        ← GAS project root (open in Apps Script editor)
 ├── Code.gs                    # doPost (webhook + LIFF write API), doGet (data API: ?api=overview, ?api=list)
-├── Line.gs                    # reply(), replyText(), buildReceiptFlex(), buildConfirmEditFlex(), buildConfirmDeleteFlex(), replyWithTypeQuickReply(), replyWithCategoryQuickReply()
+├── Line.gs                    # reply(), replyText(), formatThaiDate(), getCategoryEmoji(), buildReceiptFlex(), sendUpdatedReceipt(), buildConfirmDeleteFlex(), replyWithCategoryQuickReply()
 ├── Gemini.gs                  # parseEntry(text) → Gemini Flash-Lite call; parseWithRegex(text) → regex fallback
-├── Sheet.gs                   # getSheet(), addEntry(), getEntryById(), updateEntryFields(), deleteEntryStatus(), getCategoriesString(), getCategoriesArray(), getUserStatus(), addUser(), setupDatabase()
+├── Sheet.gs                   # getSheet(), addEntry(), getEntryById(), updateEntryFields(), deleteEntryStatus(), toggleEntryType(), updateEntryCategory(), updateEntryDate(), getCategoriesString(), getCategoriesArray(), getUserStatus(), addUser(), setupDatabase()
 ├── Access.gs                  # handleUserAccess(userId, replyToken) — status check, auto-register new users
 ├── State.gs                   # CacheService: setClarificationState/getClarificationState/clearClarificationState (TTL=600s); PropertiesService: isUserWelcomed/setUserWelcomed
 ├── Config.gs                  # CONFIG object: SHEET_ID, LINE_ACCESS_TOKEN, GEMINI_API_KEY, LIFF_ID, TIMEZONE, CLARIFICATION_TTL_SECONDS
 │                              # (Overview.gs not yet implemented — ?api=overview logic is inline in Code.gs)
 ├── index.html                 # LIFF frontend hosted on GitHub Pages: tabs ภาพรวม / หมวดหมู่ / แฮชแท็ก / รายการ; Chart.js; edit/delete/undo via POST with idToken
+├── css/
+│   └── styles.css              # LIFF frontend styles (design-system tokens)
+├── js/                          # LIFF frontend split by concern (loaded by index.html, GitHub Pages)
+│   ├── app.js / state.js / config.js / format.js / ui.js
+│   ├── api.js                  # GAS /exec calls (overview, list, edit/delete/undo)
+│   ├── components.js / charts.js
+│   └── views/                  # overview.js, categories.js, trend.js, entries.js
+├── images/                     # Rich menu + profile assets used by the bot/LIFF
 │
 ├── docs/
-│   ├── adr/                   # Architecture Decision Records (ADR-0001 through ADR-0006)
+│   ├── adr/                   # Architecture Decision Records (ADR-0001 through ADR-0007)
 │   ├── diagrams/              # System diagrams (Mermaid)
 │   ├── design-notes.md        # Design decisions below ADR level (22 items + Sheet schema)
+│   ├── design-system.md       # Visual spec (color tokens, surface checklist) — wins over code
 │   ├── implementation-plan.md # High-level roadmap (phase intentions + build-order rationale)
-│   ├── PRD/                   # Product Requirements (problem, user stories, scope)
+│   ├── PRD.md                  # Product Requirements (problem, user stories, scope)
 │   └── superpowers/plans/     # Executable plans: code-level tasks, signatures, tests, per-task verification
 │
 ├── tasks/
@@ -161,10 +170,10 @@ JotHai/                        ← GAS project root (open in Apps Script editor)
 │
 ├── CONTEXT.md                 # Domain glossary (Entry, Receipt, Clarification, Category, etc.)
 └── .claude/
-    ├── settings.json          # Hooks: load-lessons (SessionStart), log-tool-usage (PostToolUse)
+    ├── settings.json          # 5 hook events: SessionStart (load-lessons, load-project-docs),
+    │                          # PostToolUse (log-tool-usage), PreToolUse (blocks dangerous rm/delete),
+    │                          # SubagentStop (validation-gates logging), UserPromptSubmit (test reminder)
     └── hooks/
-        ├── load-lessons.sh
-        └── log-tool-usage.sh
 ```
 
 **Google Sheet tabs** (bound to this Apps Script):
@@ -264,7 +273,7 @@ The model string is set as `modelName` in `Gemini.gs` (currently `'gemini-3.1-fl
 ### ⚠️ LINE Webhook Behavior
 
 - **LINE retries failed webhooks.** If `doPost` throws (HTTP 5xx), LINE retries — this causes duplicate entries. Return HTTP 200 as early as possible, even on partial failure.
-- **Webhook signature verification:** Always verify the `X-Line-Signature` header using `LINE_CHANNEL_SECRET`. Skipping this allows anyone to POST fake events.
+- **Webhook signature verification is not yet implemented** (`LINE_CHANNEL_SECRET` is unused) — anyone can POST fake events to the webhook. This is a known gap, not a protection currently in place; flag it if touching `doPost`.
 - **`source.userId` is not guaranteed** in all event types — always null-check before reading.
 
 ### ⚠️ Gemini Integration
