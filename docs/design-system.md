@@ -350,7 +350,7 @@ Each component lists its **anatomy → tokens → key states → principle**. Fu
 Global header that persists across all four dashboard tabs.
 
 - **Anatomy:** a row with `‹` / `›` arrow buttons flanking a centered, tappable month label (Thai month + Buddhist-era year, e.g. "กรกฎาคม 2569"); below it a three-cell summary strip — รายรับ · รายจ่าย · คงเหลือ. A visually-hidden native `<input type="month">` sits behind the label for direct month jumps.
-- **Tokens:** arrows `text-secondary` (hover `brand`); month label `text-primary`, `--text-heading`; strip labels `text-muted` `--text-caption`; รายรับ amount `income-text`, รายจ่าย amount `expense-text`, คงเหลือ amount `income-text` when ≥0 else `expense-text`; container `surface`, `--radius-lg`, `--shadow-md`.
+- **Tokens:** arrows `text-secondary` (hover `brand`); month label `text-primary`, `--text-heading`; strip labels `text-muted` `--text-caption`; strip amounts `--text-title` (24px/600, sized up from `--text-heading` for at-a-glance legibility) — รายรับ amount `income-text`, รายจ่าย amount `expense-text`, คงเหลือ amount `income-text` when ≥0 else `expense-text`; container `surface`, `--radius-lg`, `--shadow-md`.
 - **States:** arrow press scale 0.96 (§6); month label updates **immediately** on tap (before the async fetch) — a `.spinner` ring appears alongside "กำลังโหลดข้อมูล..." and `.summary-strip` dims to opacity 0.4 while waiting; on success, amounts count-up on change (§6); on fetch error, totals reset to ฿0 (never show stale prior-month data).
 - **Principle:** the month is global context — it lives once at the top, never repeated inside a tab.
 

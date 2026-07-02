@@ -181,7 +181,7 @@ body {
 }
 
 .summary-amt {
-  font: var(--text-heading);
+  font: var(--text-title);
 }
 
 .summary-amt.income {

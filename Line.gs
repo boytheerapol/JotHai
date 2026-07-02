@@ -286,7 +286,7 @@ function buildReceiptFlex(entryId, parsed, source, timestamp) {
                 height: "sm",
                 action: {
                   type: "postback",
-                  label: "🏷 เปลี่ยนหมวด",
+                  label: "🏷 แก้หมวด",
                   data: `action=change_category&id=${entryId}`,
                 },
               },
