@@ -75,9 +75,11 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
       .map(([, i]) => i),
   );
 
+  const cycledColors = d.map((_, i) => c[i % c.length]);
+
   registry[canvasId] = new Chart(canvas.getContext("2d"), {
     type: "doughnut",
-    data: { labels: l, datasets: [{ data: d, backgroundColor: c, borderWidth: 0 }] },
+    data: { labels: l, datasets: [{ data: d, backgroundColor: cycledColors, borderWidth: 0 }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
