@@ -78,7 +78,7 @@ function renderActive() {
 }
 
 function setLoading(on) {
-  el("loading").style.display = on ? "block" : "none";
+  el("loading").style.display = on ? "flex" : "none";
   // Dim stale totals while fetching so last month's numbers don't read as current.
   document.querySelector(".summary-strip").classList.toggle("loading", on);
 }
