@@ -44,18 +44,19 @@ LIFF dashboard (เปิดในตัว LINE) แสดงรายงาน
 15. As a user, I want to see a donut chart of income vs. expense for the current month with a balance summary, so that I understand my overall financial position at a glance. _(แท็บ ภาพรวม)_ _(อัปเดต: แก้ไขปัญหาป้าย "คงเหลือ" และยอดเงินไม่อยู่กึ่งกลางแนวตั้งของ donut เมื่อมี legend ด้านล่าง — ตอนนี้ยึดกึ่งกลางตามพื้นที่วงแหวนจริงเสมอ ไม่ว่าจะมี legend หรือไม่)_
 16. As a user, I want to see a breakdown of expenses or income by category with a ranked list and percentages, so that I know where I'm spending or earning most — with a toggle to switch between expense and income view. _(แท็บ หมวดหมู่ — type toggle รายจ่าย/รายรับ)_
 17. As a user, I want to see a 6-month bar chart comparing income vs. expense trends, so that I can spot patterns across months. _(แท็บ เทียบเดือน — type toggle รายจ่าย/รายรับ)_
-18. As a user, I want to switch between months in the dashboard using arrow buttons or by tapping the month label, so that I can review past months without leaving the dashboard. _(อัปเดต: month label เปลี่ยนทันทีเมื่อกดลูกศร ก่อน network fetch จะเสร็จ — spinner แสดงระหว่างโหลด, ยอดสรุปหรี่ลงขณะรอ, ถ้า fetch ล้มเหลวยอดจะ reset เป็น ฿0 แทนที่จะแสดงเดือนเก่า)_
+18. As a user, I want to switch between months in the dashboard using arrow buttons or by tapping the month label, so that I can review past months without leaving the dashboard. _(อัปเดต: month label เปลี่ยนทันทีเมื่อกดลูกศร ก่อน network fetch จะเสร็จ — spinner แสดงระหว่างโหลด, ยอดสรุปหรี่ลงขณะรอ, ถ้า fetch ล้มเหลวยอดจะ reset เป็น ฿0 แทนที่จะแสดงเดือนเก่า)_ _(อัปเดต: เพิ่ม `loadToken` sequencing guard — ถ้าเดือนก่อนหน้าตอบกลับช้ากว่าเดือนที่กดทีหลัง จะ discard response เก่าทิ้งไม่ให้ overwrite ข้อมูลใหม่กว่า; ปุ่มลูกศร/month input ถูก disable ระหว่าง fetch เพื่อกัน double-tap)_
 19. As a user, I want to see a breakdown of entries grouped by hashtag inside the หมวดหมู่ tab, so that I can see totals for a specific trip or project without a separate filter page. _(#แท็ก sub-tab ภายใน หมวดหมู่)_
 19a. As a user, I want the donut chart to show percentage labels on the top 10 largest slices, so that I can immediately see which categories dominate without having to read the list below. _(อัปเดต: ใช้ chartjs-plugin-datalabels — แสดงเฉพาะ top 10 slice เพื่อไม่ให้รก; สีตัวอักษรปรับอัตโนมัติตาม luminance ของ slice สีอ่อน=ตัวเข้ม, สีเข้ม=ตัวขาว; donut ภาพรวม 2 slice แสดงทั้งคู่; empty ring ไม่แสดง label)_
 
 ### LIFF Dashboard — จัดการรายการ (บน GitHub Pages)
 
 20. As a user, I want to see a list of all active entries for the current month in the dashboard, so that I can review them after receipts have scrolled away in chat. _(อัปเดต: รายการจัดกลุ่มตามวัน — header ของแต่ละวันแสดงยอดรายรับ/รายจ่ายรวม ด้วยตัวอักษรใหญ่กว่ารายการ ทำให้แยกแยะยอดรายวันกับรายการแต่ละรายการได้ทันที)_
-21. As a user, I want to edit the amount of an entry from the entry list, so that I can correct typos without deleting and re-entering.
+21. As a user, I want to edit the amount of an entry from the entry list, so that I can correct typos without deleting and re-entering. _(อัปเดต: บล็อกการบันทึกถ้าจำนวนเงินเป็น NaN, ว่าง, หรือ ≤0 — แสดง dialog เตือนเป็นภาษาไทยก่อน)_
 22. As a user, I want to edit the description of an entry from the entry list, so that I can add context to entries recorded in shorthand.
-23. As a user, I want to delete an entry from the entry list with a soft delete, so that the data isn't permanently lost. _(อัปเดต: ใช้ SweetAlert2 ในการทำ Popup ยืนยันการลบแบบ Native-like ไม่มี URL กวนใจ)_
+23. As a user, I want to delete an entry from the entry list with a soft delete, so that the data isn't permanently lost. _(อัปเดต: ใช้ SweetAlert2 ในการทำ Popup ยืนยันการลบแบบ Native-like ไม่มี URL กวนใจ)_ _(อัปเดต: ปุ่ม Undo ที่โผล่หลังลบ auto-hide หลัง 9 วินาทีถ้าไม่กด — ไม่ค้างอยู่ตลอดไป)_
 24. As a user, I want to undo a deleted entry from the entry list, so that I can recover accidental deletions.
 25. As a user, I want to change the category of an entry from the entry list, so that I can reclassify entries recorded with Gemini fallback. _(อัปเดต: ใช้ Dynamic Dropdown ที่ดึงข้อมูลหมวดหมู่แบบ Real-time มาจาก Sheet Categories)_
+25a. As a user, I want any edit/delete/undo action that fails (network error, timeout, server rejection) to show a clear Thai error dialog, so that I know it didn't silently fail. _(อัปเดต: `mutateEntry()` ครอบ try/catch — ทุกความล้มเหลว normalize เป็น `{status:"error"}` พร้อมข้อความไทย; request ใช้ timeout 15 วินาทีผ่าน `AbortController`; `idToken` ถูกดึงใหม่จาก `liff.getIDToken()` ทุกครั้งก่อน mutate แทนที่จะใช้ค่าที่ capture ไว้ตอน boot; ปุ่มที่กำลัง mutate จะ disable ระหว่าง request เพื่อกัน double-submit)_
 
 ### การเข้าถึงและ Onboarding
 
@@ -152,6 +153,7 @@ _(อัปเดต: ใช้เทคนิคการส่ง Fetch API �
   - เทียบเดือน — 6 แท่ง, เดือนปัจจุบัน opacity เต็ม, เส้น average ถูกต้อง; ไม่มี datalabel บน bar
   - รายการ — จัดกลุ่มตามวัน; ยอดรายวัน (▲/▼) แสดงใหญ่กว่ารายการ; edit/delete/undo ทำงานครบ; idToken verified
   - month-nav — กดลูกศร: label เปลี่ยนทันที, spinner หมุน, ยอดหรี่ลง 40%; fetch เสร็จ: ยอดอัปเดตและหาย dim; ทดสอบ fetch พัง: ยอดเป็น ฿0 (ไม่ใช่เดือนเก่า)
+  - accessibility — focus ring (2px brand) มองเห็นได้บน element ที่ interactive ทุกตัวเมื่อ tab ด้วยคีย์บอร์ด; tab bar เข้าถึงได้ผ่าน screen reader (role=tablist/tab/tabpanel + aria-selected); ปุ่มและ touch target ทั้งหมด ≥44×44px
 
 ## Out of Scope
 

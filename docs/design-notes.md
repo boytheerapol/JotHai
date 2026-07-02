@@ -33,6 +33,10 @@
 | 24 | Receipt header style | ใช้ `linearGradient` (light→dark band) + solid `backgroundColor` fallback สำหรับ LINE client เก่าที่ไม่รองรับ gradient |
 | 25 | Thai date weekday prefix | `formatThaiDate` prefix วันในสัปดาห์ย่อ (จ./อ./พ./พฤ./ศ./ส./อา.) ด้วย ISO weekday index ก่อน date string ทุก Entry |
 | 26 | Donut color cycling | `CHART_PALETTE` cycling ด้วย `i % palette.length` ใน `buildDonut()` รองรับ >8 categories โดยไม่มี blank/undefined slice |
+| 27 | Touch target size | ปุ่ม `.btn-small` และ `.month-arrow` บังคับ min-height/width 44px (deviation จาก §7.4/§7.11 sizing เดิม ~24-36px) เพื่อผ่าน a11y touch-target guideline |
+| 28 | Undo delete window | Undo affordance หลัง soft-delete auto-hide หลัง 9 วินาทีถ้าไม่กด (ป้องกัน UI ค้างสถานะ "รอ undo" ตลอดไป) |
+| 29 | idToken freshness | `mutateEntry()` เรียก `liff.getIDToken()` ใหม่ทุกครั้งก่อน mutate แทนที่จะใช้ token ที่ capture ไว้ตอน boot (LIFF session อยู่ได้นาน token อาจหมดอายุ) |
+| 30 | Month-nav race guard | ใช้ `loadToken` sequencing — ถ้า response เดือนเก่ามาช้ากว่าเดือนใหม่ที่ fetch ทีหลัง ให้ discard response เก่าทิ้ง ไม่ overwrite ข้อมูลที่ใหม่กว่า |
 
 ## Bot Tone & Error Strings
 

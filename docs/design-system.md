@@ -298,6 +298,7 @@ Each component lists its **anatomy → tokens → key states → principle**. Fu
 
 - **Common tokens:** radius `--radius-md`, label `--text-label`, press scale 0.96 (§6).
 - **States:** default / hover / active / disabled (`text-muted` on `surface-alt`) / focus (2px `brand` ring).
+- **Touch target (shipped):** `.btn-small` enforces `min-height: 44px`, superseding the ~24px sizing implied by its padding alone — a11y touch-target minimum (design-notes #27).
 - **Principle:** exactly one primary button per view.
 
 ### 7.5 Form input (LIFF)
@@ -353,6 +354,7 @@ Global header that persists across all four dashboard tabs.
 - **Anatomy:** a row with `‹` / `›` arrow buttons flanking a centered, tappable month label (Thai month + Buddhist-era year, e.g. "กรกฎาคม 2569"); below it a three-cell summary strip — รายรับ · รายจ่าย · คงเหลือ. A visually-hidden native `<input type="month">` sits behind the label for direct month jumps.
 - **Tokens:** arrows `text-secondary` (hover `brand`); month label `text-primary`, `--text-heading`; strip labels `text-muted` `--text-caption`; strip amounts `--text-title` (24px/600, sized up from `--text-heading` for at-a-glance legibility) — รายรับ amount `income-text`, รายจ่าย amount `expense-text`, คงเหลือ amount `income-text` when ≥0 else `expense-text`; container `surface`, `--radius-lg`, `--shadow-md`.
 - **States:** arrow press scale 0.96 (§6); month label updates **immediately** on tap (before the async fetch) — a `.spinner` ring appears alongside "กำลังโหลดข้อมูล..." and `.summary-strip` dims to opacity 0.4 while waiting; on success, amounts count-up on change (§6); on fetch error, totals reset to ฿0 (never show stale prior-month data).
+- **Touch target (shipped):** `.month-arrow` enforces `min-height/width: 44px`, superseding the 24-28px sizing implied by its padding alone — a11y touch-target minimum (design-notes #27). Arrows and the month input also disable while a fetch is in flight to block double-taps.
 - **Principle:** the month is global context — it lives once at the top, never repeated inside a tab.
 
 ### 7.12 Segmented type toggle (LIFF)
@@ -413,6 +415,7 @@ The whole point of this system: the same meaning looks the same everywhere.
 3. **Amounts** always use a semantic color (`income-text`/`expense-text`) or `text-primary` — never an arbitrary color.
 4. **Any new hex** must be added to §2 first; nothing ships that isn't in the table.
 5. **Money text on white** uses the `-text` tier; bright `-fill` tiers are for segments, accents, and large white-on-color labels only.
+6. **Keyboard focus** is a single global rule, not a per-component style: every interactive element (`button`, `a`, `input`, `select`, `[tabindex]`) gets a 2px solid `brand` `:focus-visible` outline (2px offset). Defined once in `styles.css`; §7.x entries do not repeat it.
 
 ---
 
