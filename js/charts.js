@@ -64,14 +64,14 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
     c = [CHART_EMPTY];
   }
 
-  // On-slice %: show only the 5 largest slices so many near-equal categories
+  // On-slice %: show only the 10 largest slices so many near-equal categories
   // don't clutter the ring (deviation from §7.9 "centered total + legend" only).
   const total = d.reduce((a, b) => a + b, 0);
   const topIdx = new Set(
     d
       .map((v, i) => [v, i])
       .sort((a, b) => b[0] - a[0])
-      .slice(0, 5)
+      .slice(0, 10)
       .map(([, i]) => i),
   );
 
