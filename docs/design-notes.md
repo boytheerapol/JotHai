@@ -29,6 +29,10 @@
 | 20 | Hashtag เพี้ยน | Normalize ตอนเก็บ (ตัด #, trim, lowercase ASCII, ไทยคงเดิม) |
 | 21 | แก้/ลบ Category | Entry เก็บ category เป็น **snapshot** |
 | 22 | Onboarding | Welcome ตอน approve + พิม **"help"** |
+| 23 | Donut % label count | แสดง % บน **10 slice ใหญ่สุด** (เปลี่ยนจาก 5 เพราะ categories จริงมักเกิน 5) |
+| 24 | Receipt header style | ใช้ `linearGradient` (light→dark band) + solid `backgroundColor` fallback สำหรับ LINE client เก่าที่ไม่รองรับ gradient |
+| 25 | Thai date weekday prefix | `formatThaiDate` prefix วันในสัปดาห์ย่อ (จ./อ./พ./พฤ./ศ./ส./อา.) ด้วย ISO weekday index ก่อน date string ทุก Entry |
+| 26 | Donut color cycling | `CHART_PALETTE` cycling ด้วย `i % palette.length` ใน `buildDonut()` รองรับ >8 categories โดยไม่มี blank/undefined slice |
 
 ## Bot Tone & Error Strings
 

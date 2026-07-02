@@ -46,7 +46,7 @@ LIFF dashboard (เปิดในตัว LINE) แสดงรายงาน
 17. As a user, I want to see a 6-month bar chart comparing income vs. expense trends, so that I can spot patterns across months. _(แท็บ เทียบเดือน — type toggle รายจ่าย/รายรับ)_
 18. As a user, I want to switch between months in the dashboard using arrow buttons or by tapping the month label, so that I can review past months without leaving the dashboard. _(อัปเดต: month label เปลี่ยนทันทีเมื่อกดลูกศร ก่อน network fetch จะเสร็จ — spinner แสดงระหว่างโหลด, ยอดสรุปหรี่ลงขณะรอ, ถ้า fetch ล้มเหลวยอดจะ reset เป็น ฿0 แทนที่จะแสดงเดือนเก่า)_
 19. As a user, I want to see a breakdown of entries grouped by hashtag inside the หมวดหมู่ tab, so that I can see totals for a specific trip or project without a separate filter page. _(#แท็ก sub-tab ภายใน หมวดหมู่)_
-19a. As a user, I want the donut chart to show percentage labels on the top 5 largest slices, so that I can immediately see which categories dominate without having to read the list below. _(อัปเดต: ใช้ chartjs-plugin-datalabels — แสดงเฉพาะ top 5 slice เพื่อไม่ให้รก; สีตัวอักษรปรับอัตโนมัติตาม luminance ของ slice สีอ่อน=ตัวเข้ม, สีเข้ม=ตัวขาว; donut ภาพรวม 2 slice แสดงทั้งคู่; empty ring ไม่แสดง label)_
+19a. As a user, I want the donut chart to show percentage labels on the top 10 largest slices, so that I can immediately see which categories dominate without having to read the list below. _(อัปเดต: ใช้ chartjs-plugin-datalabels — แสดงเฉพาะ top 10 slice เพื่อไม่ให้รก; สีตัวอักษรปรับอัตโนมัติตาม luminance ของ slice สีอ่อน=ตัวเข้ม, สีเข้ม=ตัวขาว; donut ภาพรวม 2 slice แสดงทั้งคู่; empty ring ไม่แสดง label)_
 
 ### LIFF Dashboard — จัดการรายการ (บน GitHub Pages)
 
@@ -85,7 +85,7 @@ LIFF dashboard (เปิดในตัว LINE) แสดงรายงาน
   - `js/config.js` — LIFF_ID, GAS_URL, CHART_PALETTE, category icon map, mascot path
   - `js/api.js` — `getOverview()`, `getTrend()`, `getList()`, `mutateEntry()`
   - `js/state.js` — shared state: month, activeTab, type toggle, subTab + `shiftMonth()`
-  - `js/charts.js` — `buildDonut()`, `buildTrendBar()` (never Chart.js default palette); `ChartDataLabels` registered globally; `contrastText()` helper สำหรับ auto-contrast label บน slice; top-5 % labels บน donut; datalabels ปิดบน trend bar
+  - `js/charts.js` — `buildDonut()`, `buildTrendBar()` (never Chart.js default palette); `ChartDataLabels` registered globally; `contrastText()` helper สำหรับ auto-contrast label บน slice; top-10 % labels บน donut; palette cycling (`i % palette.length`) รองรับ >8 categories; datalabels ปิดบน trend bar
   - `js/format.js` — money/date formatters (Asia/Bangkok via Intl, no `toISOString`)
   - `js/ui.js` — SweetAlert2 `Swal2` / `Toast` mixins
   - `js/components.js` — type toggle HTML + empty state fragment
@@ -148,7 +148,7 @@ _(อัปเดต: ใช้เทคนิคการส่ง Fetch API �
 - Cross-user mutation → ต้องถูกปฏิเสธโดยเซิร์ฟเวอร์ทันทีหากนำ Token ของ User A ไปแก้ข้อมูล User B
 - **4-tab smoke test (เปิดผ่าน LINE app):**
   - ภาพรวม — donut ใช้ income-fill/expense-fill; คงเหลือแสดงถูกต้องตามเครื่องหมาย; 2 slice แสดง % ทั้งคู่พร้อม auto-contrast color
-  - หมวดหมู่ — toggle สลับ donut + list; sub-tab #แท็ก แสดง breakdown รวม "ไม่มีแท็ก"; donut แสดง % เฉพาะ 5 slice ใหญ่สุด; เทียบเดือน bar ไม่แสดง %
+  - หมวดหมู่ — toggle สลับ donut + list; sub-tab #แท็ก แสดง breakdown รวม "ไม่มีแท็ก"; donut แสดง % เฉพาะ 10 slice ใหญ่สุด; เทียบเดือน bar ไม่แสดง %
   - เทียบเดือน — 6 แท่ง, เดือนปัจจุบัน opacity เต็ม, เส้น average ถูกต้อง; ไม่มี datalabel บน bar
   - รายการ — จัดกลุ่มตามวัน; ยอดรายวัน (▲/▼) แสดงใหญ่กว่ารายการ; edit/delete/undo ทำงานครบ; idToken verified
   - month-nav — กดลูกศร: label เปลี่ยนทันที, spinner หมุน, ยอดหรี่ลง 40%; fetch เสร็จ: ยอดอัปเดตและหาย dim; ทดสอบ fetch พัง: ยอดเป็น ฿0 (ไม่ใช่เดือนเก่า)

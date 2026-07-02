@@ -324,7 +324,7 @@ Each component lists its **anatomy → tokens → key states → principle**. Fu
 ### 7.9 Donut chart wrapper (LIFF / Chart.js)
 - **Anatomy:** fixed-height container (~220px), centered total label, bottom legend (Kanit).
 - **Tokens:** overview donut → `income-fill` / `expense-fill`; category & hashtag donuts → `CHART_PALETTE` (§2) in order; empty ring → `CHART_EMPTY`.
-- **On-slice % labels (shipped):** top 5 slices (by value) display their `%`-of-total as a Kanit 600 12px label directly on the segment. Smaller slices and the empty-ring state show no label. Label color is auto-contrasted: `text-primary` (`#1A1523`) on fills with perceived luminance > 0.6 (e.g. lime `#A3E635`, orange `#F0A020`); `#fff` on darker fills (brand violet, pink, blue). Plugin: `chartjs-plugin-datalabels@2` (CDN global, registered once in `charts.js`). The overview donut has only 2 slices — both are labeled. The trend bar chart opts out (`datalabels: { display: false }`).
+- **On-slice % labels (shipped):** top 10 slices (by value) display their `%`-of-total as a Kanit 600 12px label directly on the segment. Smaller slices and the empty-ring state show no label. Label color is auto-contrasted: `text-primary` (`#1A1523`) on fills with perceived luminance > 0.6 (e.g. lime `#A3E635`, orange `#F0A020`); `#fff` on darker fills (brand violet, pink, blue). Plugin: `chartjs-plugin-datalabels@2` (CDN global, registered once in `charts.js`). The overview donut has only 2 slices — both are labeled. The trend bar chart opts out (`datalabels: { display: false }`).
 - **Motion:** draw-in on first render (§6).
 - **Principle:** **never** use the Chart.js default palette. Income/expense meaning is fixed to its semantic colors in every chart.
 
