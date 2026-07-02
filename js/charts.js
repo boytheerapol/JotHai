@@ -77,9 +77,21 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
 
   const cycledColors = d.map((_, i) => c[i % c.length]);
 
+  // Keeps the HTML `.chart-center` overlay aligned with the doughnut's actual
+  // drawn center, which shifts up when the bottom legend eats vertical space.
+  const centerSync = {
+    id: "centerSync",
+    afterLayout(chart) {
+      const { top, bottom } = chart.chartArea;
+      const pct = ((top + bottom) / 2 / chart.height) * 100;
+      canvas.parentElement.style.setProperty("--chart-center-top", pct + "%");
+    },
+  };
+
   registry[canvasId] = new Chart(canvas.getContext("2d"), {
     type: "doughnut",
     data: { labels: l, datasets: [{ data: d, backgroundColor: cycledColors, borderWidth: 0 }] },
+    plugins: [centerSync],
     options: {
       responsive: true,
       maintainAspectRatio: false,

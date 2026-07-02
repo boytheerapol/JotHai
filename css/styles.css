@@ -319,7 +319,7 @@ body {
 
 .chart-center {
   position: absolute;
-  top: 50%;
+  top: var(--chart-center-top, 50%);
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;

@@ -41,7 +41,7 @@ LIFF dashboard (เปิดในตัว LINE) แสดงรายงาน
 ### LIFF Dashboard — ภาพรวม (บน GitHub Pages)
 
 14. As a user, I want to open a dashboard from the LINE Rich Menu, so that I can view my monthly financial overview without leaving LINE.
-15. As a user, I want to see a donut chart of income vs. expense for the current month with a balance summary, so that I understand my overall financial position at a glance. _(แท็บ ภาพรวม)_
+15. As a user, I want to see a donut chart of income vs. expense for the current month with a balance summary, so that I understand my overall financial position at a glance. _(แท็บ ภาพรวม)_ _(อัปเดต: แก้ไขปัญหาป้าย "คงเหลือ" และยอดเงินไม่อยู่กึ่งกลางแนวตั้งของ donut เมื่อมี legend ด้านล่าง — ตอนนี้ยึดกึ่งกลางตามพื้นที่วงแหวนจริงเสมอ ไม่ว่าจะมี legend หรือไม่)_
 16. As a user, I want to see a breakdown of expenses or income by category with a ranked list and percentages, so that I know where I'm spending or earning most — with a toggle to switch between expense and income view. _(แท็บ หมวดหมู่ — type toggle รายจ่าย/รายรับ)_
 17. As a user, I want to see a 6-month bar chart comparing income vs. expense trends, so that I can spot patterns across months. _(แท็บ เทียบเดือน — type toggle รายจ่าย/รายรับ)_
 18. As a user, I want to switch between months in the dashboard using arrow buttons or by tapping the month label, so that I can review past months without leaving the dashboard. _(อัปเดต: month label เปลี่ยนทันทีเมื่อกดลูกศร ก่อน network fetch จะเสร็จ — spinner แสดงระหว่างโหลด, ยอดสรุปหรี่ลงขณะรอ, ถ้า fetch ล้มเหลวยอดจะ reset เป็น ฿0 แทนที่จะแสดงเดือนเก่า)_
