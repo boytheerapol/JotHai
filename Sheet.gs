@@ -1,3 +1,10 @@
+// ป้องกัน Formula Injection: ถ้าค่าขึ้นต้นด้วย = + - @ ให้เติม ' นำหน้า
+// เพื่อบังคับให้ Sheets เก็บเป็นข้อความล้วน ไม่ตีความเป็นสูตรเวลาเปิดดู
+function sanitizeForSheet(value) {
+  const str = (value || "").toString();
+  return /^[=+\-@]/.test(str) ? `'${str}` : str;
+}
+
 function getSheet(sheetName) {
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
   let sheet = ss.getSheetByName(sheetName);
@@ -88,11 +95,11 @@ function addEntry(userId, parsed, rawText, source) {
     timestamp,
     parsed.type,
     parsed.amount,
-    parsed.description,
+    sanitizeForSheet(parsed.description),
     parsed.category,
-    normalizedHashtags,
+    sanitizeForSheet(normalizedHashtags),
     status,
-    rawText,
+    sanitizeForSheet(rawText),
     source,
   ];
 

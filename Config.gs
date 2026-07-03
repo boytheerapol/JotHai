@@ -8,6 +8,8 @@ const CONFIG = {
   GEMINI_API_KEY:
     PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY"),
   LIFF_ID: PropertiesService.getScriptProperties().getProperty("LIFF_ID"),
+  WEBHOOK_SECRET:
+    PropertiesService.getScriptProperties().getProperty("WEBHOOK_SECRET"),
 
   TIMEZONE: "Asia/Bangkok",
   CLARIFICATION_TTL_SECONDS: 600,

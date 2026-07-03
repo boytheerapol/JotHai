@@ -16,7 +16,15 @@ function doPost(e) {
     // ==========================================
     // 🚦 เส้นทางที่ 2: รับแชทและปุ่มกดจาก LINE (Webhook)
     // ==========================================
+    // GAS doPost(e) ไม่สามารถอ่าน HTTP header (X-Line-Signature) ได้ จึง verify ด้วย
+    // shared-secret query param ที่ฝังไว้ใน Webhook URL แทน (ต้องตรงกับ WEBHOOK_SECRET)
     if (data.events && data.events.length > 0) {
+      const wh = e.parameter && e.parameter.wh;
+      if (!CONFIG.WEBHOOK_SECRET || wh !== CONFIG.WEBHOOK_SECRET) {
+        console.error("Webhook secret mismatch — rejecting request");
+        return ContentService.createTextOutput("OK");
+      }
+
       const event = data.events[0];
       const replyToken = event.replyToken;
 
@@ -34,6 +42,14 @@ function doPost(e) {
         const entryId = params["id"];
         // ค่าจาก datetimepicker (ปุ่ม "แก้วันที่") จะอยู่ใน event.postback.params.date
         const pickerParams = event.postback.params || {};
+
+        // ป้องกันการแก้ไข/ลบรายการของผู้อื่นด้วย entryId ที่รู้มา — ต้องเป็นเจ้าของเท่านั้น
+        if (entryId) {
+          const ownerEntry = getEntryById(entryId);
+          if (!ownerEntry || ownerEntry.userId !== event.source.userId) {
+            return ContentService.createTextOutput("OK");
+          }
+        }
 
         // 1. กดปุ่ม "เปลี่ยนหมวด" บนใบเสร็จ -> โชว์ Quick Reply หมวดหมู่
         if (action === "change_category") {
@@ -181,12 +197,28 @@ function doGet(e) {
 
   const api = e.parameter.api;
 
-  if (api === "overview") {
-    return handleOverviewRequest(e);
-  } else if (api === "list") {
-    return handleListRequest(e); // เพิ่มการเรียกดูหน้ารายการ
-  } else if (api === "trend") {
-    return handleTrendRequest(e); // กราฟเทียบรายเดือนย้อนหลัง
+  if (api === "overview" || api === "list" || api === "trend") {
+    // ต้อง verify idToken ก่อนเสมอ — ห้ามเชื่อ userId ที่ส่งมาใน query string ตรงๆ
+    // (เดิมใครก็ตามที่รู้ userId ของคนอื่นสามารถอ่านข้อมูลการเงินได้โดยไม่ต้อง login)
+    const lineUserId = verifyLineIdToken(e.parameter.idToken);
+    if (!lineUserId) {
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          status: "error",
+          message: "Unauthorized: ตรวจสอบ Token ไม่ผ่าน",
+        }),
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+    // ใช้ userId ที่ verify แล้วเท่านั้น ไม่สนใจค่า userId ที่ client ส่งมา
+    e.parameter.userId = lineUserId;
+
+    if (api === "overview") {
+      return handleOverviewRequest(e);
+    } else if (api === "list") {
+      return handleListRequest(e); // เพิ่มการเรียกดูหน้ารายการ
+    } else if (api === "trend") {
+      return handleTrendRequest(e); // กราฟเทียบรายเดือนย้อนหลัง
+    }
   }
 
   return ContentService.createTextOutput(
@@ -574,8 +606,26 @@ function handleLiffApiRequest(postData) {
     } else if (action === "undo") {
       sheet.getRange(rowIdx, col["status"]).setValue("active"); // กู้คืน
     } else if (action === "edit") {
-      sheet.getRange(rowIdx, col["amount"]).setValue(payload.amount);
-      sheet.getRange(rowIdx, col["description"]).setValue(payload.description);
+      // Validate ฝั่ง server เสมอ — ห้ามเชื่อว่า frontend validate มาแล้ว
+      const amount = parseFloat(payload.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return buildJsonResponse({
+          status: "error",
+          message: "จำนวนเงินไม่ถูกต้อง กรุณาระบุตัวเลขที่มากกว่า 0",
+        });
+      }
+      const validCategories = getCategoriesArray();
+      if (validCategories.indexOf(payload.category) === -1) {
+        return buildJsonResponse({
+          status: "error",
+          message: "หมวดหมู่ไม่ถูกต้อง",
+        });
+      }
+
+      sheet.getRange(rowIdx, col["amount"]).setValue(amount);
+      sheet
+        .getRange(rowIdx, col["description"])
+        .setValue(sanitizeForSheet(payload.description));
       sheet.getRange(rowIdx, col["category"]).setValue(payload.category);
     }
 
@@ -591,8 +641,8 @@ function handleLiffApiRequest(postData) {
 // 📌 ฟังก์ชันตรวจสอบความถูกต้องของคนล็อกอิน (idToken) กับระบบ LINE
 function verifyLineIdToken(idToken) {
   try {
-    // ⚠️ อย่าลืมใช้ Client ID จาก LIFF ID ของคุณ (ตัวเลข 10 หลักข้างหน้า)
-    const clientId = "2010529543";
+    // Client ID คือส่วนตัวเลขนำหน้าของ LIFF_ID — ดึงจาก CONFIG เสมอ ห้าม hardcode
+    const clientId = CONFIG.LIFF_ID.split("-")[0];
     const url = "https://api.line.me/oauth2/v2.1/verify";
 
     const options = {

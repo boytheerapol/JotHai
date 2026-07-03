@@ -39,7 +39,7 @@ async function getJson(params) {
 export async function getOverview() {
   const json = await getJson({
     api: "overview",
-    userId: state.userId,
+    idToken: liff.getIDToken(),
     month: state.month,
   });
   return json.data;
@@ -48,7 +48,7 @@ export async function getOverview() {
 export async function getTrend() {
   const json = await getJson({
     api: "trend",
-    userId: state.userId,
+    idToken: liff.getIDToken(),
     month: state.month,
     months: TREND_MONTHS,
   });
@@ -58,7 +58,7 @@ export async function getTrend() {
 export async function getList() {
   const json = await getJson({
     api: "list",
-    userId: state.userId,
+    idToken: liff.getIDToken(),
     month: state.month,
   });
   return { entries: json.data, categories: json.categories || [] };
