@@ -8,7 +8,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css" />
 
   <!-- Classic scripts (globals: liff, Chart, Swal) load before the ES module -->
@@ -20,8 +20,22 @@
 
 <body>
   <a href="#main-content" class="skip-link">ข้ามไปยังเนื้อหาหลัก</a>
+  <!-- Ambient background orbs (static — decorative, aria-hidden) -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
   <div class="app">
     <h1 class="sr-only">JotHai — สรุปการเงิน</h1>
+    <!-- Brand header -->
+    <header class="brand-header">
+      <img class="brand-logo" src="images/profile3.png" alt="JotHai" width="40" height="40">
+      <div>
+        <div class="brand-title">JotHai</div>
+        <div class="brand-subtitle">สรุปการเงิน</div>
+      </div>
+    </header>
     <!-- §7.11 Global month-nav header (persists across all tabs) -->
     <header class="card app-header">
       <div class="month-nav">

@@ -1,10 +1,13 @@
-// Design-system colors for Flex cards — copied from docs/design-system.md §2
+// Design-system colors for Flex cards — copied from docs/design/design-system.md §2
 // (Flex JSON cannot read CSS variables; hex is mirrored from the token table.)
+// NOTE: Flex cards render on LINE's WHITE chat background, so the *text* tiers stay
+// dark enough to pass AA on white; only the bright *fill* family shifts to teal/coral
+// to match the dashboard. (The dashboard is dark, where fill == text.)
 const FLEX = {
-  incomeFill: "#16C784",
-  expenseFill: "#FF5C7C",
-  incomeText: "#0F7A4A",
-  expenseText: "#CB2A30",
+  incomeFill: "#2DD4BF",   // teal — accent bar / large bold amount (AA-large on white)
+  expenseFill: "#FB7185",  // coral — accent bar / large bold amount (AA-large on white)
+  incomeText: "#0D9488",   // teal-dark — AA on white for normal text
+  expenseText: "#E11D48",  // coral-dark — AA on white for normal text
   brand: "#7C3AED",
   brandSubtle: "#F1EBFE",
   info: "#2B6BFF",

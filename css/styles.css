@@ -1,40 +1,51 @@
 /* ============================================================
-   JotHai — LIFF Dashboard styles
-   Tokens mirror docs/design-system.md §2–§6 (that file wins).
+   JotHai — LIFF Dashboard styles (Dark Glassmorphic)
+   Tokens mirror docs/design/design-system.md §2–§6 (that file wins).
+   Theme sourced from docs/design/JotHai.dc.html (Claude Design mockup).
    ============================================================ */
 
 :root {
-  /* Brand */
+  /* ---- Base (dark) ---- */
+  --color-bg: #181031;              /* page background */
   --color-brand: #7C3AED;
   --color-brand-hover: #6D28D9;
-  --color-brand-subtle: #F1EBFE;
+  --color-brand-light: #B79BFF;     /* brand on dark (focus ring, links) */
+  --color-brand-subtle: rgba(183, 155, 255, 0.14); /* tinted hover/active bg on dark */
   --color-brand-on: #FFFFFF;
 
-  /* Accent */
-  --color-accent-lime: #A3E635;
-  --color-accent-pink: #F472B6;
+  /* Brand gradient — active tab/segment fill */
+  --brand-gradient: linear-gradient(140deg, #B79BFF, #7C3AED);
+  --brand-glow: 0 8px 20px -10px rgba(183, 155, 255, 0.9);
 
-  /* Semantic — fill vs text */
-  --color-income-fill: #16C784;
-  --color-income-text: #0F7A4A;
-  --color-expense-fill: #FF5C7C;
-  --color-expense-text: #CB2A30;
-  --color-warning-fill: #FFF3CD;
-  --color-warning-text: #8A6100;
-  --color-info: #2B6BFF;
+  /* ---- Glass surfaces ---- */
+  --color-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03) 55%);
+  --color-surface-alt: rgba(255, 255, 255, 0.05);   /* inputs, pill tracks */
+  --glass-border: rgba(255, 255, 255, 0.13);
+  --glass-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  --glass-shadow-sm: 0 18px 44px -30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --color-border: rgba(255, 255, 255, 0.10);        /* dividers/hairlines */
 
-  /* Neutrals */
-  --color-bg: #F7F5FF;
-  --color-surface: #FFFFFF;
-  --color-surface-alt: #FAFAFE;
-  --color-border: #E6E1F0;
-  --color-text-primary: #1A1523;
-  --color-text-secondary: #4B4458;
-  --color-text-muted: #6E6880;
+  /* ---- Money (teal / coral) ----
+     On dark, the bright fill also reads as the amount text (AA-large on #181031). */
+  --color-income-fill: #2DD4BF;
+  --color-income-text: #2DD4BF;
+  --color-expense-fill: #FB7185;
+  --color-expense-text: #FB8FA3;
 
-  /* Typography */
+  --color-warning-fill: rgba(240, 160, 32, 0.14);
+  --color-warning-text: #F0C060;
+  --color-info: #6D8BFF;
+
+  /* ---- Text tiers (bumped opacity to pass AA on dark glass) ---- */
+  --color-text-primary: #EFEAFF;                    /* ~14:1 on bg */
+  --color-text-secondary: rgba(235, 230, 255, 0.82);/* AA body */
+  --color-text-muted: rgba(235, 230, 255, 0.62);    /* AA large/caption min */
+
+  /* ---- Typography ----
+     Sora → numbers/amounts (tabular). Kanit → Thai + general UI. */
+  --font-num: "Sora", "Kanit", sans-serif;
   --text-display: 700 32px/40px "Kanit", sans-serif;
-  --text-title: 600 24px/32px "Kanit", sans-serif;
+  --text-title: 600 24px/32px var(--font-num);
   --text-heading: 600 18px/26px "Kanit", sans-serif;
   --text-body: 400 16px/24px "Kanit", sans-serif;
   --text-label: 500 14px/20px "Kanit", sans-serif;
@@ -53,13 +64,9 @@
   /* Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-lg: 24px;      /* cards (mockup) */
+  --radius-chip: 11px;    /* icon chips */
   --radius-pill: 999px;
-
-  /* Elevation (violet-tinted) */
-  --shadow-sm: 0 1px 2px rgba(26, 21, 35, 0.06);
-  --shadow-md: 0 4px 14px rgba(124, 58, 237, 0.10);
-  --shadow-lg: 0 10px 28px rgba(124, 58, 237, 0.16);
 
   /* Motion */
   --motion-fast: 120ms;
@@ -80,19 +87,99 @@ body {
   font: var(--text-body);
   background: var(--color-bg);
   color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Ambient background orbs (static — no float animation) ---------- */
+.bg-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-orbs .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+.bg-orbs .orb-1 {
+  top: -160px;
+  left: -120px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, #FF7A3D 0%, transparent 69%);
+  opacity: 0.5;
+  filter: blur(90px);
+}
+
+.bg-orbs .orb-2 {
+  top: 34%;
+  right: -220px;
+  width: 640px;
+  height: 640px;
+  background: radial-gradient(circle, #E0409A 0%, transparent 69%);
+  opacity: 0.5;
+}
+
+.bg-orbs .orb-3 {
+  bottom: -260px;
+  left: 24%;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, #6D28D9 0%, transparent 69%);
+  opacity: 0.44;
+  filter: blur(110px);
 }
 
 .app {
+  position: relative;
+  z-index: 1;
   max-width: 500px;
   margin: 0 auto;
 }
 
+/* ---------- Glass card primitive ---------- */
 .card {
   background: var(--color-surface);
+  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px);
+  border: 1px solid var(--glass-border);
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-shadow);
   margin-bottom: var(--space-4);
+}
+
+/* ---------- Brand header ---------- */
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1) var(--space-4);
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  object-fit: cover;
+  box-shadow: 0 8px 20px -8px rgba(124, 58, 237, 0.9);
+}
+
+.brand-title {
+  font: 700 18px/1.1 var(--font-num);
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.brand-subtitle {
+  font: var(--text-caption);
+  color: var(--color-text-muted);
+  margin-top: 2px;
 }
 
 /* ---------- Accessibility utilities ---------- */
@@ -131,7 +218,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 2px solid var(--color-brand-light);
   outline-offset: 2px;
 }
 
@@ -143,32 +230,33 @@ select:focus-visible,
 .month-nav {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .month-arrow {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   cursor: pointer;
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1;
-  color: var(--color-text-secondary);
-  padding: var(--space-1) var(--space-3);
-  /* min-height/width: touch-target override, deviates from §7.11 sizing (24-28px) to meet 44px minimum */
+  color: var(--color-text-primary);
+  /* min-height/width: touch-target override, deviates from §7.11 sizing to meet 44px minimum */
   min-height: 44px;
   min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   transition: color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
     transform var(--motion-fast) var(--ease-spring);
 }
 
 .month-arrow:hover {
-  color: var(--color-brand);
+  color: var(--color-brand-light);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .month-arrow:active {
@@ -182,8 +270,9 @@ select:focus-visible,
   cursor: pointer;
   min-width: 160px;
   text-align: center;
-  color: var(--color-text-primary);
-  font: var(--text-heading);
+  color: #FFFFFF;
+  font: 700 18px/1.1 var(--font-num);
+  letter-spacing: -0.01em;
   padding: var(--space-1) var(--space-2);
 }
 
@@ -199,9 +288,9 @@ select:focus-visible,
 }
 
 .summary-strip {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
 }
 
 .summary-strip.loading {
@@ -210,24 +299,25 @@ select:focus-visible,
 }
 
 .summary-cell {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
+  padding: 0 var(--space-2);
 }
 
 .summary-cell + .summary-cell {
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .summary-cap {
   font: var(--text-caption);
+  letter-spacing: 0.06em;
   color: var(--color-text-muted);
 }
 
 .summary-amt {
-  font: var(--text-title);
+  font: 700 20px/1.1 var(--font-num);
 }
 
 .summary-amt.income {
@@ -242,11 +332,14 @@ select:focus-visible,
 .tabs {
   position: relative;
   display: flex;
+  gap: var(--space-1);
   margin-bottom: var(--space-4);
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   padding: var(--space-1);
-  box-shadow: var(--shadow-sm);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .tab-indicator {
@@ -255,7 +348,8 @@ select:focus-visible,
   left: var(--space-1);
   width: calc((100% - 2 * var(--space-1)) / 4);
   height: calc(100% - 2 * var(--space-1));
-  background: var(--color-brand);
+  background: var(--brand-gradient);
+  box-shadow: var(--brand-glow);
   border-radius: var(--radius-pill);
   transition: transform var(--motion-base) var(--ease-standard);
   z-index: 0;
@@ -270,7 +364,7 @@ select:focus-visible,
   cursor: pointer;
   background: transparent;
   border: none;
-  font: var(--text-label);
+  font: 600 13px/1.2 "Kanit", sans-serif;
   color: var(--color-text-secondary);
   transition: color var(--motion-base) var(--ease-standard),
     transform var(--motion-fast) var(--ease-spring);
@@ -288,11 +382,12 @@ select:focus-visible,
 .type-toggle {
   position: relative;
   display: flex;
+  gap: var(--space-1);
   margin-bottom: var(--space-4);
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   padding: var(--space-1);
-  box-shadow: var(--shadow-sm);
 }
 
 .type-toggle .seg-indicator {
@@ -301,7 +396,8 @@ select:focus-visible,
   left: var(--space-1);
   width: calc((100% - 2 * var(--space-1)) / 2);
   height: calc(100% - 2 * var(--space-1));
-  background: var(--color-brand);
+  background: var(--brand-gradient);
+  box-shadow: var(--brand-glow);
   border-radius: var(--radius-pill);
   transition: transform var(--motion-base) var(--ease-standard);
   z-index: 0;
@@ -311,12 +407,12 @@ select:focus-visible,
   position: relative;
   z-index: 1;
   flex: 1;
-  padding: var(--space-2);
+  padding: var(--space-3);
   text-align: center;
   cursor: pointer;
   background: transparent;
   border: none;
-  font: var(--text-label);
+  font: 600 13.5px/1.2 "Kanit", sans-serif;
   color: var(--color-text-secondary);
   transition: color var(--motion-base) var(--ease-standard),
     transform var(--motion-fast) var(--ease-spring);
@@ -333,7 +429,7 @@ select:focus-visible,
 /* Sub-tab (หมวดหมู่ / #แท็ก) — text underline style */
 .subtabs {
   display: flex;
-  gap: var(--space-5);
+  gap: var(--space-6);
   justify-content: center;
   margin-bottom: var(--space-4);
 }
@@ -343,7 +439,7 @@ select:focus-visible,
   border: none;
   cursor: pointer;
   padding: var(--space-2) 0;
-  font: var(--text-label);
+  font: 600 13.5px/1.2 "Kanit", sans-serif;
   color: var(--color-text-muted);
   border-bottom: 2px solid transparent;
   transition: color var(--motion-fast) var(--ease-standard),
@@ -351,8 +447,8 @@ select:focus-visible,
 }
 
 .subtab-btn.active {
-  color: var(--color-brand);
-  border-bottom-color: var(--color-brand);
+  color: #FFFFFF;
+  border-bottom-color: var(--color-brand-light);
 }
 
 /* ---------- §7.9 Donut chart wrapper ---------- */
@@ -378,8 +474,8 @@ select:focus-visible,
 }
 
 .chart-center-value {
-  font: var(--text-title);
-  color: var(--color-text-primary);
+  font: 700 22px/1.2 var(--font-num);
+  color: #FFFFFF;
 }
 
 /* ---------- §7.13 Category / hashtag list row ---------- */
@@ -392,8 +488,8 @@ select:focus-visible,
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-2);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-sm);
   animation: entry-in var(--motion-slow) var(--ease-out) both;
   transition: background var(--motion-fast) var(--ease-standard);
@@ -407,6 +503,8 @@ select:focus-visible,
   background: var(--color-brand-subtle);
 }
 
+/* Icon chip — keeps the category emoji; --row-tint colors the glass per category
+   (set inline by categories.js from CHART_PALETTE). */
 .row-icon {
   flex: 0 0 auto;
   width: 40px;
@@ -414,8 +512,11 @@ select:focus-visible,
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-pill);
-  background: var(--color-brand-subtle);
+  border-radius: var(--radius-chip);
+  background: linear-gradient(140deg,
+      color-mix(in srgb, var(--row-tint, #B79BFF) 30%, transparent),
+      color-mix(in srgb, var(--row-tint, #B79BFF) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--row-tint, #B79BFF) 28%, transparent);
   font-size: 20px;
 }
 
@@ -438,8 +539,7 @@ select:focus-visible,
 }
 
 .row-amount {
-  font: var(--text-label);
-  font-weight: 600;
+  font: 700 14.5px/1.2 var(--font-num);
 }
 
 .row-amount.income {
@@ -451,8 +551,9 @@ select:focus-visible,
 }
 
 .row-pct {
-  font: var(--text-caption);
+  font: 400 12px/1.4 var(--font-num);
   color: var(--color-text-muted);
+  margin-top: 1px;
 }
 
 /* ---------- §7.14 Trend bar chart caption ---------- */
@@ -460,34 +561,34 @@ select:focus-visible,
   text-align: center;
   font: var(--text-label);
   color: var(--color-text-secondary);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .trend-avg strong {
-  color: var(--color-text-primary);
+  color: #FFFFFF;
+  font-family: var(--font-num);
 }
 
 /* ---------- §7.3 Entry card + date grouping ---------- */
 .day-group {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .day-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: var(--space-2) var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-1) var(--space-1);
   margin-bottom: var(--space-3);
 }
 
 .day-date {
-  font: var(--text-label);
+  font: 700 13.5px/1.2 "Kanit", sans-serif;
   color: var(--color-text-secondary);
 }
 
 .day-subtotal {
-  font: var(--text-heading);
+  font: 700 14px/1.2 var(--font-num);
   color: var(--color-expense-text);
 }
 
@@ -496,13 +597,29 @@ select:focus-visible,
 }
 
 .entry-card {
+  position: relative;
   background: var(--color-surface);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+  border-radius: 20px;
   margin-bottom: var(--space-3);
-  box-shadow: var(--shadow-sm);
-  border-left: 4px solid var(--color-border);
+  box-shadow: var(--glass-shadow-sm);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
   animation: entry-in var(--motion-slow) var(--ease-out) both;
+}
+
+/* Left accent stripe as a pseudo-element (border-left would clip the radius). */
+.entry-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--color-border);
 }
 
 @keyframes entry-in {
@@ -517,12 +634,12 @@ select:focus-visible,
   }
 }
 
-.entry-card.expense {
-  border-left-color: var(--color-expense-fill);
+.entry-card.expense::before {
+  background: var(--color-expense-fill);
 }
 
-.entry-card.income {
-  border-left-color: var(--color-income-fill);
+.entry-card.income::before {
+  background: var(--color-income-fill);
 }
 
 .entry-header {
@@ -533,9 +650,14 @@ select:focus-visible,
   margin-bottom: var(--space-1);
 }
 
+.entry-header .num,
+.entry-header b {
+  font-family: var(--font-num);
+}
+
 .entry-desc {
-  color: var(--color-text-muted);
-  font: var(--text-label);
+  color: var(--color-text-secondary);
+  font: var(--text-body);
   margin-bottom: var(--space-3);
 }
 
@@ -548,18 +670,19 @@ select:focus-visible,
 /* ---------- §7.4 Buttons ---------- */
 .btn {
   padding: var(--space-3) var(--space-5);
-  background: var(--color-brand);
+  background: var(--brand-gradient);
   color: var(--color-brand-on);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
   font: var(--text-label);
-  transition: background var(--motion-fast) var(--ease-standard),
+  box-shadow: var(--brand-glow);
+  transition: filter var(--motion-fast) var(--ease-standard),
     transform var(--motion-fast) var(--ease-spring);
 }
 
 .btn:hover {
-  background: var(--color-brand-hover);
+  filter: brightness(1.08);
 }
 
 .btn:active {
@@ -567,16 +690,16 @@ select:focus-visible,
 }
 
 .btn-small {
-  padding: var(--space-1) var(--space-3);
-  /* min-height: touch-target override, deviates from §7.4 sizing (~24px) to meet 44px minimum */
+  padding: var(--space-1) var(--space-4);
+  /* min-height: touch-target override, deviates from §7.4 sizing to meet 44px minimum */
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
-  font: var(--text-caption);
+  font: 600 13px/1.2 "Kanit", sans-serif;
   transition: transform var(--motion-fast) var(--ease-spring),
     background var(--motion-fast) var(--ease-standard);
 }
@@ -585,19 +708,18 @@ select:focus-visible,
   transform: scale(0.96);
 }
 
-/* Secondary variant — surface + border, brand text */
+/* Secondary variant — glass surface, brand-light text */
 .btn-edit {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-brand);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-primary);
 }
 
-/* Danger variant — deliberate deviation from §7.4: this button is small (12px),
-   so white-on-expense-fill (2.97:1) fails AA. Use the darker expense-text tier
-   (white-on-#CB2A30 = 5.37:1, AA pass) as the fill for legibility. */
+/* Danger variant — coral tint on dark (large-enough label satisfies AA-large) */
 .btn-delete {
-  background: var(--color-expense-text);
-  color: var(--color-brand-on);
+  background: rgba(251, 113, 133, 0.14);
+  border: 1px solid rgba(251, 113, 133, 0.35);
+  color: var(--color-expense-text);
 }
 
 /* Ghost variant — transparent, secondary text */
@@ -606,13 +728,14 @@ select:focus-visible,
   color: var(--color-text-secondary);
 }
 
-/* Undo variant — surface + border, secondary text */
+/* Undo variant — glass surface, secondary text */
 .btn-undo {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   color: var(--color-text-secondary);
   width: 100%;
   padding: var(--space-3);
+  border-radius: var(--radius-md);
 }
 
 /* ---------- §7.5 Form input (edit form) ---------- */
@@ -620,9 +743,10 @@ select:focus-visible,
   display: none;
   flex-direction: column;
   gap: var(--space-3);
-  background: var(--color-surface-alt);
+  background: rgba(255, 255, 255, 0.04);
   padding: var(--space-3);
   border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   margin-top: var(--space-3);
 }
 
@@ -641,17 +765,22 @@ select:focus-visible,
 .form-group input,
 .form-group select {
   padding: var(--space-2);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font: var(--text-label);
-  background: var(--color-surface-alt);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+}
+
+.form-group select option {
+  background: #241a3d;
   color: var(--color-text-primary);
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: var(--color-brand);
+  border-color: var(--color-brand-light);
   box-shadow: 0 0 0 2px var(--color-brand-subtle);
 }
 
@@ -692,7 +821,7 @@ select:focus-visible,
   width: 48px;
   height: 48px;
   border: 4px solid var(--color-border);
-  border-top-color: var(--color-brand);
+  border-top-color: var(--color-brand-light);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -712,19 +841,27 @@ select:focus-visible,
 /* ---------- Card section title ---------- */
 .section-title {
   text-align: center;
-  font: var(--text-heading);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-4);
+  font: 700 16px/1.3 var(--font-num);
+  color: #FFFFFF;
+  margin: 0 0 var(--space-5);
 }
 
 /* ---------- SweetAlert2 — JotHai theme (§7.8) ---------- */
 .swal2-popup.jothai-swal {
   font-family: "Kanit", sans-serif;
   border-radius: var(--radius-lg);
+  background: #201835;
+  color: var(--color-text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+.swal2-popup.jothai-swal .swal2-title,
+.swal2-popup.jothai-swal .swal2-html-container {
+  color: var(--color-text-primary);
 }
 
 .swal2-popup.jothai-swal.swal2-toast {
-  border-left: 4px solid var(--color-brand);
+  border-left: 4px solid var(--color-brand-light);
 }
 
 .swal2-icon.swal2-success {

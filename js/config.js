@@ -15,16 +15,18 @@ export const TREND_MONTHS = 6;
 export const TIMEZONE = "Asia/Bangkok";
 
 // Categorical palette for category/hashtag donuts (NOT income-vs-expense) — §2
+// Dark-theme set sourced from the design mockup; also tints the emoji icon chips.
 export const CHART_PALETTE = [
-  "#7C3AED", "#16C784", "#FF5C7C", "#2B6BFF",
-  "#A3E635", "#F472B6", "#F0A020", "#14B8C4",
+  "#6D8BFF", "#34D399", "#F59E0B", "#FB7185",
+  "#C084FC", "#F472B6", "#818CF8", "#2DD4BF",
 ];
-export const CHART_EMPTY = "#E6E1F0";
-export const COLOR_INCOME_FILL = "#16C784";
-export const COLOR_EXPENSE_FILL = "#FF5C7C";
-export const COLOR_TEXT_SECONDARY = "#4B4458";
-export const COLOR_TEXT_MUTED = "#6E6880";
-export const COLOR_BORDER = "#E6E1F0";
+export const CHART_EMPTY = "rgba(255, 255, 255, 0.08)";
+export const COLOR_INCOME_FILL = "#2DD4BF";
+export const COLOR_EXPENSE_FILL = "#FB7185";
+// Axis/grid/legend text on the dark surface (mirror design-system.md text tiers)
+export const COLOR_TEXT_SECONDARY = "rgba(235, 230, 255, 0.82)";
+export const COLOR_TEXT_MUTED = "rgba(235, 230, 255, 0.62)";
+export const COLOR_BORDER = "rgba(255, 255, 255, 0.12)";
 
 export const REDUCED_MOTION = window.matchMedia(
   "(prefers-reduced-motion: reduce)",

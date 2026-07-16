@@ -12,8 +12,9 @@ import {
   COLOR_BORDER,
 } from "./config.js";
 
-// Kanit everywhere (§7.9)
+// Kanit everywhere (§7.9); default text light for the dark theme.
 Chart.defaults.font.family = "Kanit";
+Chart.defaults.color = COLOR_TEXT_SECONDARY;
 
 // On-slice % labels (donut only). ChartDataLabels is a CDN global; register once,
 // then opt in/out per chart via each chart's `plugins.datalabels`.
@@ -111,7 +112,7 @@ export function buildDonut(canvasId, labels, values, colors, showLegend = true) 
         legend: {
           display: showLegend,
           position: "bottom",
-          labels: { font: { family: "Kanit" }, boxWidth: 12 },
+          labels: { font: { family: "Kanit" }, color: COLOR_TEXT_SECONDARY, boxWidth: 12 },
         },
         datalabels: {
           color: (ctx) => contrastText(ctx.dataset.backgroundColor[ctx.dataIndex]),

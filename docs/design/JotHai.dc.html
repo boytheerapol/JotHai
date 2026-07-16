@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#181031;font-family:'Instrument Sans','Noto Sans Thai',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#efeaff}
+  a{color:#b79bff;text-decoration:none}
+  a:hover{color:#cdbcff}
+  .num{font-family:'Sora','Noto Sans Thai',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+  .sora{font-family:'Sora','Noto Sans Thai',system-ui,sans-serif}
+  ::-webkit-scrollbar{width:0}
+  @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-36px) scale(1.1)}}
+  @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-40px,30px) scale(1.06)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion:reduce){.orb{animation:none!important}}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;width:100%;overflow-x:hidden;background:#181031;display:flex;justify-content:center;padding:0">
+
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden">
+    <div class="orb" style="position:absolute;top:-160px;left:-120px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,#ff7a3d 0%,transparent 69%);filter:blur(90px);opacity:.55;animation:orbFloat 16s ease-in-out infinite;animation-play-state:{{ orbAnim }}"></div>
+    <div class="orb" style="position:absolute;top:34%;right:-220px;width:640px;height:640px;border-radius:50%;background:radial-gradient(circle,#e0409a 0%,transparent 69%);filter:blur(100px);opacity:.55;animation:orbFloat2 20s ease-in-out infinite;animation-play-state:{{ orbAnim }}"></div>
+    <div class="orb" style="position:absolute;bottom:-260px;left:24%;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,#6d28d9 0%,transparent 69%);filter:blur(110px);opacity:.44;animation:orbFloat 24s ease-in-out infinite;animation-play-state:{{ orbAnim }}"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;width:100%;max-width:412px;min-height:100vh;padding:0 18px 40px;display:flex;flex-direction:column;gap:16px">
+
+    <header style="position:sticky;top:0;z-index:5;margin:0 -18px;padding:16px 18px 14px;background:linear-gradient(180deg,rgba(24,16,49,.86),rgba(24,16,49,.55) 70%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;align-items:center;gap:12px">
+      <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(140deg,#b79bff,#7c3aed);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px -8px rgba(124,58,237,.9)">
+        <span class="sora" style="font-weight:800;font-size:17px;color:#fff">J</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="sora" style="font-weight:700;font-size:17px;color:#fff;letter-spacing:-.01em;line-height:1.1">JotHai</div>
+        <div style="font-size:11.5px;color:rgba(235,230,255,.55);line-height:1.3">{{ subtitle }}</div>
+      </div>
+      <button style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:rgba(235,230,255,.75);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">⋮</button>
+      <button style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:rgba(235,230,255,.75);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </header>
+
+    <section style="background:linear-gradient(155deg,rgba(255,255,255,.11),rgba(255,255,255,.035) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(183,155,255,.35);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15);border-radius:24px;padding:18px 18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <button onClick="{{ prevMonth }}" style="width:36px;height:36px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#efeaff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+        <div class="sora" style="font-weight:700;font-size:18px;color:#fff;letter-spacing:-.01em">{{ monthLabel }}</div>
+        <button onClick="{{ nextMonth }}" style="width:36px;height:36px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#efeaff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px">
+        <div style="text-align:center;padding:0 6px">
+          <div style="font-size:11px;letter-spacing:.06em;color:rgba(235,230,255,.55);margin-bottom:6px">รายรับ</div>
+          <div class="num" style="font-weight:700;font-size:20px;color:#2dd4bf;line-height:1.1">{{ income }}</div>
+        </div>
+        <div style="text-align:center;padding:0 6px;border-left:1px solid rgba(255,255,255,.1);border-right:1px solid rgba(255,255,255,.1)">
+          <div style="font-size:11px;letter-spacing:.06em;color:rgba(235,230,255,.55);margin-bottom:6px">รายจ่าย</div>
+          <div class="num" style="font-weight:700;font-size:20px;color:#fb8fa3;line-height:1.1">{{ expense }}</div>
+        </div>
+        <div style="text-align:center;padding:0 6px">
+          <div style="font-size:11px;letter-spacing:.06em;color:rgba(235,230,255,.55);margin-bottom:6px">คงเหลือ</div>
+          <div class="num" style="font-weight:700;font-size:20px;color:#fb8fa3;line-height:1.1">{{ balance }}</div>
+        </div>
+      </div>
+    </section>
+
+    <nav style="display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+        <button onClick="{{ t.onClick }}" style="flex:1;padding:9px 4px;border:none;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Instrument Sans','Noto Sans Thai',sans-serif;transition:all .2s ease;white-space:nowrap;{{ t.style }}">{{ t.label }}</button>
+      </sc-for>
+    </nav>
+
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <section style="animation:fadeUp .35s ease both;background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.13);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15);border-radius:24px;padding:22px 20px 24px">
+        <div class="sora" style="font-weight:700;font-size:16px;color:#fff;text-align:center;margin-bottom:22px">สัดส่วน รายรับ–รายจ่าย</div>
+        <div style="position:relative;width:220px;height:220px;margin:0 auto 22px">
+          <div style="position:absolute;inset:0;border-radius:50%;background:{{ ovGrad }};-webkit-mask:radial-gradient(farthest-side,transparent 63%,#000 65%);mask:radial-gradient(farthest-side,transparent 63%,#000 65%)"></div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+            <div style="font-size:12px;color:rgba(235,230,255,.55);margin-bottom:4px">คงเหลือ</div>
+            <div class="num" style="font-weight:700;font-size:24px;color:#fb8fa3">{{ balance }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:20px;justify-content:center">
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:rgba(235,230,255,.75)"><span style="width:11px;height:11px;border-radius:3px;background:#2dd4bf"></span>รายรับ</div>
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:rgba(235,230,255,.75)"><span style="width:11px;height:11px;border-radius:3px;background:#fb7185"></span>รายจ่าย</div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:fadeUp .35s ease both;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)">
+          <button onClick="{{ setExpense }}" style="flex:1;padding:10px;border:none;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;transition:all .2s;{{ expStyle }}">รายจ่าย</button>
+          <button onClick="{{ setIncome }}" style="flex:1;padding:10px;border:none;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;transition:all .2s;{{ incStyle }}">รายรับ</button>
+        </div>
+        <div style="display:flex;gap:22px;justify-content:center">
+          <button onClick="{{ setModeCat }}" style="background:none;border:none;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;padding-bottom:6px;transition:all .2s;{{ modeCatStyle }}">หมวดหมู่</button>
+          <button onClick="{{ setModeTag }}" style="background:none;border:none;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;padding-bottom:6px;transition:all .2s;{{ modeTagStyle }}">#แท็ก</button>
+        </div>
+
+        <sc-if value="{{ catEmpty }}" hint-placeholder-val="{{ false }}">
+          <section style="background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.13);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15);border-radius:24px;padding:48px 20px;text-align:center">
+            <div style="font-size:36px;margin-bottom:10px;opacity:.5">◔</div>
+            <div style="font-size:14px;color:rgba(235,230,255,.7);font-weight:600">ยังไม่มีรายรับในเดือนนี้</div>
+            <div style="font-size:12.5px;color:rgba(235,230,255,.45);margin-top:4px">บันทึกรายรับเพื่อดูสัดส่วนที่นี่</div>
+          </section>
+        </sc-if>
+
+        <sc-if value="{{ catShow }}" hint-placeholder-val="{{ true }}">
+          <section style="background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.13);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15);border-radius:24px;padding:24px 20px 20px">
+            <div style="position:relative;width:200px;height:200px;margin:0 auto">
+              <div style="position:absolute;inset:0;border-radius:50%;background:{{ catGrad }};-webkit-mask:radial-gradient(farthest-side,transparent 62%,#000 64%);mask:radial-gradient(farthest-side,transparent 62%,#000 64%)"></div>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+                <div style="font-size:11.5px;color:rgba(235,230,255,.55);margin-bottom:3px">{{ catCenterLabel }}</div>
+                <div class="num" style="font-weight:700;font-size:22px;color:#fff">{{ catTotal }}</div>
+              </div>
+            </div>
+          </section>
+
+          <section style="background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.13);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15);border-radius:24px;padding:8px 6px">
+            <sc-for list="{{ catList }}" as="c" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:13px;padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="width:34px;height:34px;border-radius:11px;flex-shrink:0;background:{{ c.tile }};display:flex;align-items:center;justify-content:center">
+                  <span style="width:12px;height:12px;border-radius:4px;background:{{ c.color }}"></span>
+                </span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px;font-weight:600;color:#efeaff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="num" style="font-size:14.5px;font-weight:700;color:#fff">{{ c.amt }}</div>
+                  <div class="num" style="font-size:12px;color:rgba(235,230,255,.5);margin-top:1px">{{ c.pct }}%</div>
+                </div>
+              </div>
+            </sc-for>
+          </section>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:fadeUp .35s ease both;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)">
+          <button onClick="{{ setCmpExpense }}" style="flex:1;padding:10px;border:none;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;transition:all .2s;{{ cmpExpStyle }}">รายจ่าย</button>
+          <button onClick="{{ setCmpIncome }}" style="flex:1;padding:10px;border:none;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;transition:all .2s;{{ cmpIncStyle }}">รายรับ</button>
+        </div>
+        <section style="background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.13);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15);border-radius:24px;padding:22px 18px 18px">
+          <div class="sora" style="text-align:center;font-size:15px;color:rgba(235,230,255,.85);margin-bottom:26px">เฉลี่ย <span class="num" style="color:#fff;font-weight:700">{{ avgLabel }}</span> / เดือน</div>
+          <div style="position:relative;height:190px;margin-bottom:10px">
+            <div style="position:absolute;left:0;right:0;border-top:2px dashed rgba(216,180,254,.9);top:{{ avgTop }}"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-between;gap:9px">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="6">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
+                  <div style="width:100%;max-width:34px;border-radius:8px 8px 3px 3px;background:{{ b.fill }};height:{{ b.h }};box-shadow:{{ b.glow }};transition:height .4s ease"></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:9px">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="6">
+              <div style="flex:1;text-align:center;font-size:11.5px;color:rgba(235,230,255,.6)">{{ b.m }}</div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:fadeUp .35s ease both;display:flex;flex-direction:column;gap:22px">
+        <sc-for list="{{ days }}" as="d" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px">
+              <div style="font-size:13.5px;font-weight:700;color:rgba(235,230,255,.8)">{{ d.date }}</div>
+              <div class="num" style="font-size:14px;font-weight:700;color:#fb8fa3;display:flex;align-items:center;gap:5px">▾ {{ d.net }}</div>
+            </div>
+            <sc-for list="{{ d.items }}" as="it" hint-placeholder-count="3">
+              <div style="position:relative;background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.13);box-shadow:0 18px 44px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);border-radius:20px;padding:15px 16px;overflow:hidden">
+                <div style="position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:{{ it.color }}"></div>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                  <div style="flex:1;min-width:0;padding-left:6px">
+                    <div style="font-size:11px;letter-spacing:.05em;color:rgba(235,230,255,.5);text-transform:uppercase;margin-bottom:3px">{{ it.cat }}</div>
+                    <div style="font-size:15px;font-weight:600;color:#fff">{{ it.title }}</div>
+                  </div>
+                  <div class="num" style="font-size:16px;font-weight:700;color:#fb8fa3;white-space:nowrap">{{ it.amt }}</div>
+                </div>
+                <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:13px">
+                  <button style="padding:7px 16px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#efeaff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">แก้ไข</button>
+                  <button style="padding:7px 18px;border-radius:11px;border:1px solid rgba(251,113,133,.35);background:rgba(251,113,133,.14);color:#fb8fa3;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">ลบ</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:412,&quot;height&quot;:900},&quot;activeTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overview&quot;,&quot;category&quot;,&quot;compare&quot;,&quot;list&quot;],&quot;default&quot;:&quot;list&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview&quot;},&quot;animateOrbs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Ambient&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;สรุปการเงิน&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Header&quot;},&quot;monthLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;กรกฎาคม 2569&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Header&quot;}}">
+class Component extends DCLogic {
+  state = { tab: this.props.activeTab || 'overview', catType: 'expense', catMode: 'cat', cmpType: 'income' };
+
+  fmt(n){ const s = n<0?'-':''; return '฿'+s+Math.abs(Math.round(n)).toLocaleString('en-US'); }
+
+  grad(list){
+    let cum=0;
+    const stops = list.map(s=>{ const a=cum; cum+=s.pct; return `${s.color} ${a}% ${cum}%`; });
+    return `conic-gradient(from 0deg, ${stops.join(',')})`;
+  }
+
+  seg(active){
+    return active
+      ? 'background:linear-gradient(140deg,#b79bff,#7c3aed);color:#fff;box-shadow:0 8px 20px -10px rgba(183,155,255,.9)'
+      : 'background:transparent;color:rgba(235,230,255,.6)';
+  }
+  underline(active){
+    return active
+      ? 'color:#fff;border-bottom:2px solid #b79bff'
+      : 'color:rgba(235,230,255,.5);border-bottom:2px solid transparent';
+  }
+
+  renderVals(){
+    const set = (k,v)=>()=>this.setState({[k]:v});
+    const st = this.state;
+
+    const categories = [
+      {name:'อาหาร', amt:6353, pct:41, color:'#6d8bff'},
+      {name:'สุขภาพ', amt:3264, pct:21, color:'#34d399'},
+      {name:'เดินทาง/รถ', amt:1951, pct:12, color:'#f59e0b'},
+      {name:'ช้อปปิ้ง', amt:1551, pct:10, color:'#fb7185'},
+      {name:'ของใช้จำเป็น', amt:1190, pct:8, color:'#c084fc'},
+      {name:'บันเทิง', amt:1149, pct:7, color:'#f472b6'},
+      {name:'สาธารณูปโภค', amt:184, pct:1, color:'#818cf8'},
+    ];
+    const tags = [
+      {name:'ไม่มีแท็ก', amt:14824, pct:95, color:'#6d8bff'},
+      {name:'coffee', amt:634, pct:4, color:'#34d399'},
+      {name:'condo', amt:184, pct:1, color:'#fb7185'},
+    ];
+    const tile = (hex)=>`linear-gradient(140deg,${hex}33,${hex}14)`;
+
+    const catType = st.catType;
+    const isTag = st.catMode==='tag';
+    const rawList = catType==='income' ? [] : (isTag ? tags : categories);
+    const catList = rawList.map(c=>({ name:c.name, amt:this.fmt(c.amt), pct:c.pct, color:c.color, tile:tile(c.color) }));
+    const catEmpty = rawList.length===0;
+
+    const catColor = {'อาหาร':'#6d8bff','สุขภาพ':'#34d399','เดินทาง/รถ':'#f59e0b','ช้อปปิ้ง':'#fb7185','ของใช้จำเป็น':'#c084fc','บันเทิง':'#f472b6','สาธารณูปโภค':'#818cf8'};
+
+    const monthsInc = [
+      {m:'ก.พ.',v:780000},{m:'มี.ค.',v:970000},{m:'เม.ย.',v:880000},
+      {m:'พ.ค.',v:1090000},{m:'มิ.ย.',v:940000},{m:'ก.ค.',v:0},
+    ];
+    const monthsExp = [
+      {m:'ก.พ.',v:12800},{m:'มี.ค.',v:9700},{m:'เม.ย.',v:14200},
+      {m:'พ.ค.',v:11900},{m:'มิ.ย.',v:13400},{m:'ก.ค.',v:15642},
+    ];
+    const isInc = st.cmpType==='income';
+    const mData = isInc ? monthsInc : monthsExp;
+    const max = Math.max(...mData.map(d=>d.v)) * 1.12;
+    const avg = mData.reduce((a,d)=>a+d.v,0) / mData.filter(d=>d.v>0).length;
+    const barFill = isInc ? 'linear-gradient(180deg,#4be3cd,#2dd4bf)' : 'linear-gradient(180deg,#c9b6ff,#8b5cf6)';
+    const barGlow = isInc ? '0 8px 22px -12px rgba(45,212,191,.7)' : '0 8px 22px -12px rgba(139,92,246,.7)';
+    const bars = mData.map(d=>({ m:d.m, h:(d.v/max*100).toFixed(1)+'%', fill:barFill, glow:barGlow }));
+    const avgTop = ((1 - avg/max)*100).toFixed(1)+'%';
+
+    const days = [
+      {date:'พ. 15 ก.ค.', net:this.fmt(193), items:[
+        {cat:'อาหาร', title:'กาแฟ', amt:this.fmt(55), color:catColor['อาหาร']},
+        {cat:'อาหาร', title:'ข้าว', amt:this.fmt(50), color:catColor['อาหาร']},
+        {cat:'เดินทาง/รถ', title:'MRT', amt:this.fmt(88), color:catColor['เดินทาง/รถ']},
+      ]},
+      {date:'อ. 14 ก.ค.', net:this.fmt(567), items:[
+        {cat:'อาหาร', title:'ส้มตำ', amt:this.fmt(66), color:catColor['อาหาร']},
+        {cat:'อาหาร', title:'กาแฟ', amt:this.fmt(22), color:catColor['อาหาร']},
+        {cat:'เดินทาง/รถ', title:'Taxi', amt:this.fmt(90), color:catColor['เดินทาง/รถ']},
+        {cat:'สาธารณูปโภค', title:'ค่าไฟ', amt:this.fmt(158), color:catColor['สาธารณูปโภค']},
+        {cat:'สุขภาพ', title:'ยา', amt:this.fmt(231), color:catColor['สุขภาพ']},
+      ]},
+    ];
+
+    const tabKeys = [['overview','ภาพรวม'],['category','หมวดหมู่'],['compare','เทียบเดือน'],['list','รายการ']];
+    const tabs = tabKeys.map(([k,label])=>({ label, onClick:set('tab',k), style:this.seg(st.tab===k) }));
+
+    return {
+      subtitle: this.props.subtitle || 'สรุปการเงิน',
+      orbAnim: this.props.animateOrbs===false ? 'paused' : 'running',
+      monthLabel: this.props.monthLabel || 'กรกฎาคม 2569',
+      prevMonth: ()=>{}, nextMonth: ()=>{},
+      income: this.fmt(0), expense: this.fmt(15642), balance: this.fmt(-15642),
+      tabs,
+      isOverview: st.tab==='overview', isCategory: st.tab==='category',
+      isCompare: st.tab==='compare', isList: st.tab==='list',
+      ovGrad: this.grad([{pct:100,color:'#fb7185'}]),
+
+      setExpense:set('catType','expense'), setIncome:set('catType','income'),
+      expStyle:this.seg(catType==='expense'), incStyle:this.seg(catType==='income'),
+      setModeCat:set('catMode','cat'), setModeTag:set('catMode','tag'),
+      modeCatStyle:this.underline(!isTag), modeTagStyle:this.underline(isTag),
+      catEmpty, catShow: !catEmpty,
+      catGrad: this.grad(rawList.length?rawList:[{pct:100,color:'#6d8bff'}]),
+      catList,
+      catCenterLabel: catType==='income'?'รายรับรวม':'รายจ่ายรวม',
+      catTotal: this.fmt(15642),
+
+      setCmpExpense:set('cmpType','expense'), setCmpIncome:set('cmpType','income'),
+      cmpExpStyle:this.seg(!isInc), cmpIncStyle:this.seg(isInc),
+      avgLabel:this.fmt(avg), avgTop, bars,
+
+      days,
+    };
+  }
+}
+</script>
+</body>
+</html>

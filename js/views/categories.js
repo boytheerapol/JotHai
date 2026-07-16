@@ -56,9 +56,11 @@ export function render(el, actions) {
     const rowsHTML = rows
       .map(([name, amount], i) => {
         const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
+        // Tint the icon chip with the same palette color the donut slice uses.
+        const tint = CHART_PALETTE[i % CHART_PALETTE.length];
         return `
           <div class="breakdown-row" style="animation-delay: calc(40ms * ${i})">
-            <div class="row-icon">${iconFor(name)}</div>
+            <div class="row-icon" style="--row-tint: ${tint}">${iconFor(name)}</div>
             <div class="row-main"><div class="row-name">${esc(name)}</div></div>
             <div class="row-right">
               <div class="row-amount ${amtClass}">${formatMoney(amount)}</div>
