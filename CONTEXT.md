@@ -104,3 +104,5 @@ User มีสถานะ `pending` หรือ `approved` ใน tab `Users`
 
 ### Reply vs Push
 ระบบส่งข้อความแบบ **Reply เท่านั้น** (ตอบกลับ event) เพื่ออยู่ใน free tier — ไม่มี push สรุปอัตโนมัติ (ADR-0004)
+
+
